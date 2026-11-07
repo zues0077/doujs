@@ -1,0 +1,199 @@
+{
+  "schema": 1,
+  "upstream": {
+    "repo": "{UPSTREAM_REPO}",
+    "branch": "{UPSTREAM_BRANCH}",
+    "path": "lx-source.js",
+    "raw_url": "https://raw.githubusercontent.com/{UPSTREAM_REPO}/{UPSTREAM_BRANCH}/lx-source.js",
+    "contents_api": "https://api.github.com/repos/{UPSTREAM_REPO}/contents/lx-source.js?ref={UPSTREAM_BRANCH}",
+    "identity_note": "公开仓库不写死上游标识：owner/repo/branch 由环境变量 UPSTREAM_REPO / UPSTREAM_BRANCH 注入（CI 走仓库 Variables，不参与代码索引）。否则全局代码搜索能由上游名反查到本仓库。",
+    "license": "NOASSERTION",
+    "license_note": "上游无 LICENSE 文件且声明禁止商用。本仓库只存补丁契约与构建流程，产物由 CI 现场生成，不主张任何权利；公开分发前请自行确认授权边界。",
+    "change_key": "blob_sha",
+    "change_key_note": "必须以该脚本的 blob sha 为追新判据，不能用仓库 head：实测 head 一天前进多次，多数只改文档与巡检数据，脚本 blob 一字未变。"
+  },
+  "product": {
+    "fixed_name": "doujs",
+    "fixed_filename": "doujs.js",
+    "name_policy": "@name 与文件名必须长期固定，且刻意不含用途词：① 采集器按 name 归一化分组与去重，改名会被当成新条目重复入库；② 仓库面向公开分发，名字含用途词会被代码搜索直接命中。文件名不带版本号，避免只收最新版的逻辑把历史版本拆成多组；版本只放 @version 与 manifest.json。",
+    "version_template": "{upstream_version}-r{patch_rev}",
+    "version_note": "上游版本变化 → patch_rev 重置为 1；上游版本不变但补丁契约修订 → patch_rev +1。"
+  },
+  "anchors": [
+    {
+      "id": "A1",
+      "title": "脚本头部元数据收敛",
+      "kind": "replace_lines",
+      "severity": "blocking",
+      "why": "① @name/@description/@version/@author 收敛：原 @description 与 @version 单行近 5KB，会刷爆宿主 stdout；② 变更脚本指纹，可自动解除 sourceGuard 对旧版的历史隔离；③ 写入本仓库版本号供采集器 extractMeta 比对；④ 公开分发：banner 是下载后第一眼可见的内容，名字与作者都不含标识词，避免被检索与溯源。",
+      "line_indexes": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "line_prefixes": [
+        "* @name",
+        "* @description",
+        "* @version",
+        "* @author"
+      ],
+      "replace": [
+        " * @name doujs",
+        " * @description 服务端兼容构建（基于 {upstream_version}）",
+        " * @version {full_version}",
+        " * @author doujs"
+      ]
+    },
+    {
+      "id": "A2",
+      "title": "加载时快照宿主形态开关",
+      "kind": "replace_block_once",
+      "severity": "blocking",
+      "why": "fork App 需要对象形态返回值、宿主 需要字符串。开关必须在加载时读一次并快照成常量；若在运行期读 __lxSourceConfig，宿主或测试随后覆盖该全局对象会导致行为漂移（实测踩过）。",
+      "find": [
+        "const USER_CONFIG = {"
+      ],
+      "replace": [
+        "// 宿主 兼容版：宿主协议形态开关只在加载时读一次，避免运行期配置覆盖导致行为漂移",
+        "const EMIT_OBJECT_RESULT = !!(globalThis.__lxSourceConfig && globalThis.__lxSourceConfig.emitObjectResult === true);",
+        "const USER_CONFIG = {"
+      ]
+    },
+    {
+      "id": "A3",
+      "title": "inited 上报 actions 收敛为 ['musicUrl']",
+      "kind": "replace_block_once",
+      "severity": "blocking",
+      "why": "官方协议规定非 local 平台 actions 固定 ['musicUrl']；health/toggle/probe/config/trend 与 wy/kw 的 lyric/pic 是 fork App 私有扩展，严格宿主会过滤或判初始化失败。处理分支保留，只不再对外声明。",
+      "find": [
+        "  const actions = [\"musicUrl\"];",
+        "  if (platform === \"wy\") actions.push(\"lyric\", \"pic\");",
+        "  else if (platform === \"kw\") actions.push(\"pic\");",
+        "  actions.push(\"health\"); // v4.0：健康快照 action（App fork 声明即注册 getHealth，与平台无关的聚合查询）",
+        "  actions.push(\"toggle\", \"probe\"); // v4.0：源级开关 + 手动探测 action（App fork 声明即注册，健康面板「管」能力）",
+        "  actions.push(\"config\"); // v8.0：配置热更新 action（App 设置页读写 USER_CONFIG 内存值，免重载音源）",
+        "  actions.push(\"trend\"); // v8.0：健康趋势 action（返回历史健康快照数组，App 折线图展示）"
+      ],
+      "replace": [
+        "  // 宿主 兼容版：官方协议规定非 local 源 actions 固定 ['musicUrl']。",
+        "  // health/toggle/probe/config/trend 是 fork App 私有扩展，声明后会被严格宿主过滤/判失败。",
+        "  // 处理分支保留（不影响取链），仅不再对外声明。",
+        "  const actions = [\"musicUrl\"];"
+      ]
+    },
+    {
+      "id": "A4",
+      "title": "musicUrl 返回值解包成字符串",
+      "kind": "replace_block_once",
+      "severity": "blocking",
+      "why": "决定性根因。内部聚合层返回 {url,type,subSource,subSourceName} 对象（fork App 私有扩展），而官方协议与 宿主 的 validateReturnedMusicUrl / normalizeProbeUrl 都只接受字符串 URL，否则判「音源未返回有效的链接字符串」→ 巡检第 2 次失败写 disabledSources → 自动关平台。",
+      "find": [
+        "  return getUrlWithFallback(source, info.musicInfo, info.type || (QUALITY_FIRST ? \"flac\" : \"128k\"))",
+        "    .catch(err => Promise.reject(err));"
+      ],
+      "replace": [
+        "  return getUrlWithFallback(source, info.musicInfo, info.type || (QUALITY_FIRST ? \"flac\" : \"128k\"))",
+        "    // 宿主 兼容版：内部聚合层返回 {url,type,subSource,subSourceName} 包装对象（fork App 私有扩展），",
+        "    // 官方协议与 宿主 的 validateReturnedMusicUrl/normalizeProbeUrl 都只接受字符串 URL → 默认解包。",
+        "    // 若宿主需要 fork App 的对象形态（子源透出），加载前注入 __lxSourceConfig.emitObjectResult=true。",
+        "    .then(result => (result && typeof result === \"object\" && !EMIT_OBJECT_RESULT",
+        "      ? result.url : result))",
+        "    .catch(err => Promise.reject(err));"
+      ]
+    },
+    {
+      "id": "A5",
+      "title": "关闭脚本内部 600s 自排健康探测",
+      "kind": "replace_block_once",
+      "severity": "blocking",
+      "why": "P-0830 卡顿根因：60s 首检 + 600s 周期并发探测在 NAS 弱 CPU 上每 609s 阻塞宿主事件循环 5~7s，触发卡顿归因/慢源熔断/自动隔离。服务端已有 sourceProbe + sourceGuard 托管健康状态，脚本内探测必须默认关。fork App 可用开关恢复。",
+      "find": [
+        "// 启动健康探测（全自动自愈）",
+        "startHealthCheck();"
+      ],
+      "replace": [
+        "// 宿主 兼容版：内部 600s 自排探测在 NAS 弱 CPU 上会周期性阻塞宿主事件循环 5~7s（P-0830），",
+        "// 且服务端已有 sourceProbe 巡检 + sourceGuard 护栏托管健康状态，故默认关闭。",
+        "// 若要在 fork App 中恢复：加载前注入 globalThis.__lxSourceConfig = { enableInternalProbe: true }",
+        "if (globalThis.__lxSourceConfig && globalThis.__lxSourceConfig.enableInternalProbe === true) startHealthCheck();"
+      ]
+    },
+    {
+      "id": "A6",
+      "title": "加载日志单行收敛",
+      "kind": "regex_replace_once",
+      "severity": "warning",
+      "why": "原版加载日志是近 5KB 单行模板，每次加载刷宿主 stdout；收敛成一行。文案同时去标识化——这行会落在宿主 stdout，是运维第一眼看到的内容。匹配式用中文字符类而非字面量，避免公开仓库里出现上游标识词。此项失败不阻断构建，只标 warning。",
+      "find_regex": "^logInfo\\(`[\\u4e00-\\u9fa5\\[\\]A-Za-z0-9]{2,24}\\s?v[0-9.]+\\s?已加载[^\\n]*$",
+      "replace": "logInfo('doujs {full_version} ready | protocol ok | probe off | musicUrl string | sources ' + Object.keys(sourceConfig).length);",
+      "flags": [
+        "MULTILINE"
+      ]
+    }
+  ],
+  "post_checks": {
+    "must": [
+      "const EMIT_OBJECT_RESULT = !!\\(globalThis\\.__lxSourceConfig",
+      "const actions = \\[\"musicUrl\"\\];",
+      "\\.then\\(result => \\(result && typeof result === \"object\" && !EMIT_OBJECT_RESULT",
+      "if \\(globalThis\\.__lxSourceConfig && globalThis\\.__lxSourceConfig\\.enableInternalProbe === true\\) startHealthCheck\\(\\);",
+      "@version [0-9]+\\.[0-9]+\\.[0-9]+-r[0-9]+"
+    ],
+    "must_not": [
+      "^\\s*actions\\.push\\(",
+      "^startHealthCheck\\(\\);",
+      "^\\s*return getUrlWithFallback\\([^\\n]*\\.catch\\(err => Promise\\.reject\\(err\\)\\);"
+    ],
+    "note": "must_not 用 MULTILINE 逐行判定；动态行为（长定时器是否真的归零、musicUrl 是否真的返回字符串）由门禁的 verify_compat.cjs 实测裁决，静态哨兵只负责早发现。"
+  },
+  "global_scans": [
+    {
+      "id": "S1",
+      "title": "上游是否新增了 actions 声明",
+      "pattern": "^\\s*actions\\.push\\(",
+      "max_hits": 0,
+      "severity": "blocking",
+      "why": "上游一旦新增 action（如新的健康/配置扩展），A3 的替换可能漏掉新行，非 local 平台又会声明违规。"
+    },
+    {
+      "id": "S2",
+      "title": "是否存在裸调用的内部探测",
+      "pattern": "^startHealthCheck\\(\\);",
+      "max_hits": 0,
+      "severity": "blocking",
+      "why": "上游若换了启动方式或新增第二处入口，A5 只替换一处会漏，600s 周期卡顿会复发。"
+    },
+    {
+      "id": "S3",
+      "title": "musicUrl 是否还有其它未解包出口",
+      "pattern": "return getUrlWithFallback\\(",
+      "max_hits": 1,
+      "severity": "warning",
+      "why": "当前版本只有 1 处取链出口。若上游新增并行出口且未走 .then 解包，猎手/服务端会重新拿到对象。动态探针会兜住，但静态先提示。"
+    },
+    {
+      "id": "S4",
+      "title": "分钟级长定时器字面量",
+      "pattern": "set(?:Interval|Timeout)\\s*\\([^\\n]{0,160}?[,]\\s*[3-9][0-9]{5,}\\s*\\)",
+      "max_hits": 0,
+      "severity": "warning",
+      "why": "静态哨兵：常量通常写在配置里而非调用处，命中即说明有新的长周期调度。权威判据仍是离线探针的 longTimers 与 17951 相位验证。"
+    }
+  ],
+  "report": {
+    "always_write_run_report": true,
+    "drift_report_naming": "ANCHOR-DRIFT-{upstream_short_sha}.md",
+    "outputs": [
+      "reports/latest.json",
+      "reports/RUN-{timestamp}.md",
+      "reports/ANCHOR-DRIFT-{upstream_short_sha}.md（仅失配时）",
+      "GitHub Actions Job Summary（$GITHUB_STEP_SUMMARY）",
+      "GitHub Issue（label anchor-drift，同一上游 sha 只开一个）",
+      "actions/upload-artifact（报告与产物）",
+      "退出码：0 无变更/构建成功，2 锚点漂移，3 门禁失败，4 拉取失败"
+    ],
+    "on_drift_keep_last_good": true,
+    "on_drift_keep_last_good_note": "锚点失配时绝不写 dist/、不推进 state.json、不推 main。音源猎手继续采集上一版可用产物，不会灌入半兼容脚本。"
+  }
+}

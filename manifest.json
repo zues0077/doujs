@@ -1,0 +1,120 @@
+{
+  "schema": 2,
+  "name": "doujs",
+  "version": "8.10.3-r1",
+  "patch_rev": 1,
+  "built_at": "2026-11-07 23:39:13 +0800",
+  "filename": "doujs.js",
+  "upstream": {
+    "branch": "master",
+    "path": "lx-source.js",
+    "blob_sha": "272cf4d02452febf831cc4e2a71c09c19b41e866",
+    "version": "8.10.3",
+    "head_sha": ""
+  },
+  "product": {
+    "sha256": "de47dc999f47aa47b05b5ae4993e9a8aa582f33f532f065e873fd1f1fb8be528",
+    "bytes": 128872,
+    "obfuscated": true,
+    "plain_sha256": "42cf81531b051ceb741c655365d908ba6da254555f332b046ad2a3ec8204b766",
+    "plain_bytes": 156324
+  },
+  "obfuscation": {
+    "profile": "medium",
+    "seed": 20261107,
+    "stats": {
+      "profile": "medium",
+      "seed": 20261107,
+      "input_bytes": 156324,
+      "output_bytes": 128872,
+      "ratio": 1,
+      "max_line_length": 613,
+      "hex": {
+        "total": 0,
+        "perKb": 0
+      },
+      "banner_preserved": true,
+      "elapsed_ms": 733
+    }
+  },
+  "download": {
+    "release_latest": "https://github.com/zues0077/doujs/releases/latest/download/doujs.js",
+    "release_api": "https://api.github.com/repos/zues0077/doujs/releases/latest",
+    "note": "产物只随 Release 分发，仓库树内不放 .js —— Release 附件不被 GitHub 代码搜索索引。"
+  },
+  "hunter": {
+    "add_as_repo": "zues0077/doujs",
+    "or_web_repo": "https://raw.githubusercontent.com/zues0077/doujs/main/docs/index.html",
+    "suggested_filename": "doujs.js",
+    "release_asset": "doujs.js",
+    "note": "固定 @name 与文件名，勿改；猎手按 name 分组去重，改名会产生重复脚本。"
+  },
+  "anchors": [
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5",
+    "A6"
+  ],
+  "gates": [
+    {
+      "name": "G1 语法",
+      "ok": true
+    },
+    {
+      "name": "G2 形态",
+      "ok": true
+    },
+    {
+      "name": "G3 协议探针",
+      "ok": true
+    },
+    {
+      "name": "G4 冒烟回归",
+      "ok": true
+    },
+    {
+      "name": "G5 采集闸门",
+      "ok": true
+    },
+    {
+      "name": "G6 版本一致",
+      "ok": true
+    }
+  ],
+  "obf_gates": [
+    {
+      "name": "G1 语法",
+      "ok": true
+    },
+    {
+      "name": "G2 形态",
+      "ok": true
+    },
+    {
+      "name": "G8 混淆风险",
+      "ok": true
+    },
+    {
+      "name": "G7 混淆产物体检",
+      "ok": true
+    },
+    {
+      "name": "G3 协议探针",
+      "ok": true
+    },
+    {
+      "name": "G4 冒烟回归",
+      "ok": true
+    },
+    {
+      "name": "G5 采集闸门",
+      "ok": true
+    },
+    {
+      "name": "G6 版本一致",
+      "ok": true
+    }
+  ]
+}

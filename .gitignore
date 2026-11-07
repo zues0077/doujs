@@ -1,0 +1,13 @@
+node_modules/
+# 产物只随 Release 分发：仓库树内不留 .js，Release 附件不被 GitHub 代码搜索索引
+dist/
+__pycache__/
+*.pyc
+state/build/
+state/fixtures/
+reports/RUN-*.md
+reports/ANCHOR-DRIFT-*.md
+!reports/latest.json
+!reports/ci-summary.md
+.DS_Store
+Thumbs.db

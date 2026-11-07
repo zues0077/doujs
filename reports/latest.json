@@ -1,0 +1,192 @@
+{
+  "status": "BUILD_OK",
+  "run_at": "2026-11-07 23:37:58 +0800",
+  "exit_code": 0,
+  "upstream": {
+    "branch": "master",
+    "path": "lx-source.js",
+    "blob_sha": "272cf4d02452febf831cc4e2a71c09c19b41e866",
+    "blob_note": "由本地文件计算，等价于 GitHub blob sha",
+    "head_sha": "",
+    "version": "8.10.3"
+  },
+  "change_verdict": "上游 272cf4d02452 → 新产物 8.10.3-r1",
+  "last_good_version": "n/a",
+  "last_good_sha256": "n/a",
+  "product": {
+    "fixed_filename": "doujs.js"
+  },
+  "applied": [
+    {
+      "id": "A1",
+      "title": "脚本头部元数据收敛",
+      "kind": "replace_lines",
+      "before": "* @name / * @description / * @version / * @author",
+      "after": " * @name doujs /  * @description 服务端兼容构建（基于 {upstream_version}） /  * @version {full_version} /  * @author doujs"
+    },
+    {
+      "id": "A2",
+      "title": "加载时快照宿主形态开关",
+      "kind": "replace_block_once",
+      "before_line": 15,
+      "added_lines": 2
+    },
+    {
+      "id": "A3",
+      "title": "inited 上报 actions 收敛为 ['musicUrl']",
+      "kind": "replace_block_once",
+      "before_line": 2409,
+      "added_lines": -3
+    },
+    {
+      "id": "A4",
+      "title": "musicUrl 返回值解包成字符串",
+      "kind": "replace_block_once",
+      "before_line": 2558,
+      "added_lines": 5
+    },
+    {
+      "id": "A5",
+      "title": "关闭脚本内部 600s 自排健康探测",
+      "kind": "replace_block_once",
+      "before_line": 2578,
+      "added_lines": 2
+    },
+    {
+      "id": "A6",
+      "title": "加载日志单行收敛",
+      "kind": "regex_replace_once",
+      "before_line": 2576
+    }
+  ],
+  "drifts": [],
+  "warnings": [],
+  "scan_hits": [
+    {
+      "id": "S1",
+      "title": "上游是否新增了 actions 声明",
+      "hits": 0,
+      "max_hits": 0,
+      "severity": "blocking",
+      "why": "上游一旦新增 action（如新的健康/配置扩展），A3 的替换可能漏掉新行，非 local 平台又会声明违规。"
+    },
+    {
+      "id": "S2",
+      "title": "是否存在裸调用的内部探测",
+      "hits": 0,
+      "max_hits": 0,
+      "severity": "blocking",
+      "why": "上游若换了启动方式或新增第二处入口，A5 只替换一处会漏，600s 周期卡顿会复发。"
+    },
+    {
+      "id": "S3",
+      "title": "musicUrl 是否还有其它未解包出口",
+      "hits": 1,
+      "max_hits": 1,
+      "severity": "warning",
+      "why": "当前版本只有 1 处取链出口。若上游新增并行出口且未走 .then 解包，猎手/服务端会重新拿到对象。动态探针会兜住，但静态先提示。"
+    },
+    {
+      "id": "S4",
+      "title": "分钟级长定时器字面量",
+      "hits": 0,
+      "max_hits": 0,
+      "severity": "warning",
+      "why": "静态哨兵：常量通常写在配置里而非调用处，命中即说明有新的长周期调度。权威判据仍是离线探针的 longTimers 与 17951 相位验证。"
+    }
+  ],
+  "gates": [
+    {
+      "name": "G1 语法",
+      "ok": true,
+      "detail": "node --check OK"
+    },
+    {
+      "name": "G2 形态",
+      "ok": true,
+      "detail": "LF / 头部 / 体积 OK"
+    },
+    {
+      "name": "G3 协议探针",
+      "ok": true,
+      "detail": "{\"ok\": true, \"fails\": [], \"protocolReturnType\": \"string\", \"longTimers\": [], \"healthActionDeclared\": false, \"serverWouldAccept\": true, \"sourceCount\": 5}"
+    },
+    {
+      "name": "G4 冒烟回归",
+      "ok": true,
+      "detail": "用例 55 组 | 跑完 是 | 断言失败 1（已知差异 1 / 未知 0） | 已知：T46"
+    },
+    {
+      "name": "G5 采集闸门",
+      "ok": true,
+      "detail": "score=10 classify=True risk=空 name='doujs' version='8.10.3-r1'（真实 checker.js）"
+    },
+    {
+      "name": "G6 版本一致",
+      "ok": true,
+      "detail": "doujs @ 8.10.3-r1"
+    }
+  ],
+  "obf_gates": [
+    {
+      "name": "G1 语法",
+      "ok": true,
+      "detail": "node --check OK"
+    },
+    {
+      "name": "G2 形态",
+      "ok": true,
+      "detail": "LF / 头部 / 体积 OK"
+    },
+    {
+      "name": "G8 混淆风险",
+      "ok": true,
+      "detail": "判级=空 _0x=0(0.00/KB) \\u=2(0.02/KB) 空转=0 自调度=0"
+    },
+    {
+      "name": "G7 混淆产物体检",
+      "ok": true,
+      "detail": "{\"verdict\": \"PASS\", \"risk\": \"none\", \"score\": 8, \"server\": \"B\", \"maxLine\": 613, \"bytes\": 128872, \"blockers\": []}"
+    },
+    {
+      "name": "G3 协议探针",
+      "ok": true,
+      "detail": "{\"ok\": true, \"fails\": [], \"protocolReturnType\": \"string\", \"longTimers\": [], \"healthActionDeclared\": false, \"serverWouldAccept\": true, \"sourceCount\": 5}"
+    },
+    {
+      "name": "G4 冒烟回归",
+      "ok": true,
+      "detail": "用例 55 组 | 跑完 是 | 断言失败 0（已知差异 0 / 未知 0）"
+    },
+    {
+      "name": "G5 采集闸门",
+      "ok": true,
+      "detail": "score=8 classify=True risk=空 name='doujs' version='8.10.3-r1'（真实 checker.js）"
+    },
+    {
+      "name": "G6 版本一致",
+      "ok": true,
+      "detail": "doujs @ 8.10.3-r1"
+    }
+  ],
+  "obfuscation": {
+    "profile": "medium",
+    "seed": 20261107,
+    "stats": {
+      "profile": "medium",
+      "seed": 20261107,
+      "input_bytes": 156324,
+      "output_bytes": 128872,
+      "ratio": 1,
+      "max_line_length": 613,
+      "hex": {
+        "total": 0,
+        "perKb": 0
+      },
+      "banner_preserved": true,
+      "elapsed_ms": 733
+    }
+  },
+  "full_version": "8.10.3-r1",
+  "product_sha256": "de47dc999f47aa47b05b5ae4993e9a8aa582f33f532f065e873fd1f1fb8be528"
+}

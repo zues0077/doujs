@@ -1,0 +1,173 @@
+name: sync
+
+# 追新判据是上游 lx-source.js 的 blob sha，不是仓库 head——
+# 上游 head 每天会前进多次（docs / 巡检数据），但脚本可能一字未变。
+# 所以这里每天跑一次、由 pipeline 自己判 NO_CHANGE，比按上游提交频率触发更省额度。
+#
+# 产物分发：只走 Release 附件，仓库树内不放任何 .js。
+# 原因：GitHub 代码搜索只索引仓库内文件，Release 附件不被索引，这是「不被检索」的关键；
+# 混淆只是提高二次分发门槛，不是防检索手段。
+
+on:
+  schedule:
+    - cron: "17 3 * * *"        # 11:17 CST
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "blob sha 未变也强制重建（改了锚点契约后用）"
+        type: boolean
+        default: false
+      dry_run:
+        description: "只跑门禁、不落盘、不发 Release"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: doujs-sync
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 安装构建期依赖（锁定版本，保证产物可复现）
+        run: npm install --no-audit --no-fund
+
+      - name: 拉取上游冒烟用例（不入库，避免把上游测试代码放进本仓库）
+        # 上游地址不写死：owner/repo/branch 放在仓库 Variables，代码里只有变量名。
+        # 这样全局代码搜索无法通过上游名反查到本仓库（Variables 不参与代码索引）。
+        env:
+          UP_REPO: ${{ vars.UPSTREAM_REPO }}
+          UP_BRANCH: ${{ vars.UPSTREAM_BRANCH || 'master' }}
+        run: |
+          if [ -z "$UP_REPO" ]; then
+            echo "::error::未配置仓库 Variable UPSTREAM_REPO（Settings → Secrets and variables → Actions → Variables）"
+            exit 1
+          fi
+          mkdir -p /tmp/upstream
+          curl -sSL --retry 3 --max-time 60 \
+            -o /tmp/upstream/lx-source-smoke-test.js \
+            "https://raw.githubusercontent.com/${UP_REPO}/${UP_BRANCH}/test/lx-source-smoke-test.js"
+          wc -c /tmp/upstream/lx-source-smoke-test.js
+
+      - name: 运行流水线（明文门禁 → 混淆 → 混淆后复验）
+        id: pipe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPSTREAM_REPO: ${{ vars.UPSTREAM_REPO }}
+          UPSTREAM_BRANCH: ${{ vars.UPSTREAM_BRANCH || 'master' }}
+        run: |
+          set +e
+          ARGS="--smoke-test /tmp/upstream/lx-source-smoke-test.js --profile medium"
+          if [ "${{ inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          python tools/pipeline.py $ARGS 2>&1 | tee /tmp/pipeline.log
+          CODE=${PIPESTATUS[0]}
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          STATUS=$(python -c "import json;print(json.load(open('reports/latest.json',encoding='utf-8')).get('status',''))" 2>/dev/null || echo unknown)
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          echo "退出码 $CODE / 状态 $STATUS（0=成功或无需重建，2=锚点漂移，3=门禁失败，4=拉取失败）"
+
+      - name: 写 Job Summary
+        if: always()
+        run: |
+          if [ -f reports/ci-summary.md ]; then cat reports/ci-summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - name: 上传报告与失败现场
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-${{ github.run_number }}
+          path: |
+            reports/
+            dist/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: 提交状态与网页入口（产物不入库）
+        id: commit
+        if: steps.pipe.outputs.status == 'BUILD_OK' && inputs.dry_run != true
+        run: |
+          set -e
+          if git diff --quiet -- manifest.json state/state.json docs/index.html; then
+            echo "状态无变化，不提交"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          VERSION=$(python -c "import json;print(json.load(open('manifest.json',encoding='utf-8'))['version'])")
+          UP=$(python -c "import json;d=json.load(open('manifest.json',encoding='utf-8'));print(d['upstream']['blob_sha'][:8])")
+          git config user.name "sync-bot"
+          git config user.email "sync-bot@users.noreply.github.com"
+          git add manifest.json state/state.json docs/index.html reports/latest.json
+          git commit -m "chore: sync upstream ${UP} -> ${VERSION}"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: 发布 Release（产物唯一分发通道）
+        if: steps.pipe.outputs.status == 'BUILD_OK' && inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          VERSION=$(python -c "import json;print(json.load(open('manifest.json',encoding='utf-8'))['version'])")
+          FN=$(python -c "import json;print(json.load(open('manifest.json',encoding='utf-8'))['filename'])")
+          UP=$(python -c "import json;d=json.load(open('manifest.json',encoding='utf-8'));print(d['upstream']['blob_sha'][:8])")
+          SHA=$(python -c "import json;d=json.load(open('manifest.json',encoding='utf-8'));print(d['product']['sha256'])")
+          TAG="v${VERSION}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release ${TAG} 已存在，跳过（同一上游版本不重复发）"
+            exit 0
+          fi
+          if [ ! -f "dist/${FN}" ]; then echo "缺少产物 dist/${FN}"; exit 1; fi
+          gh release create "$TAG" "dist/${FN}" \
+            --title "${VERSION}" \
+            --notes "upstream blob ${UP}
+
+            sha256 \`${SHA}\`" \
+            --latest
+
+      - name: 漂移/门禁失败时开 Issue 提醒人工更新锚点
+        if: steps.pipe.outputs.code == '2' || steps.pipe.outputs.code == '3'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          UP=$(python -c "import json;print(json.load(open('reports/latest.json',encoding='utf-8'))['upstream']['blob_sha'][:8])" 2>/dev/null || echo unknown)
+          TITLE="[sync] 上游漂移 ${UP}：需人工更新 anchors.json"
+          EXIST=$(gh issue list --label anchor-drift --state open --json number,title \
+                  --jq ".[] | select(.title | contains(\"${UP}\")) | .number" | head -1)
+          if [ -n "$EXIST" ]; then
+            gh issue comment "$EXIST" --body-file reports/ci-summary.md
+            echo "已追加到 Issue #$EXIST"
+          else
+            gh issue create --title "$TITLE" --label anchor-drift --body-file reports/ci-summary.md
+          fi
+
+      - name: 构建成功后关闭遗留漂移 Issue
+        if: steps.pipe.outputs.status == 'BUILD_OK' && inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for n in $(gh issue list --label anchor-drift --state open --json number --jq '.[].number'); do
+            gh issue close "$n" --comment "上游已重新对齐，锚点契约更新完成，产物已发布。"
+          done
+
+      - name: 失败时让 job 标红（报告已上传）
+        if: steps.pipe.outputs.code != '0'
+        run: |
+          echo "流水线退出码 ${{ steps.pipe.outputs.code }}，详见 Job Summary 与 artifact"
+          exit 1

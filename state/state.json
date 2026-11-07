@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "upstream": {
+    "branch": "master",
+    "path": "lx-source.js",
+    "blob_sha": "272cf4d02452febf831cc4e2a71c09c19b41e866",
+    "version": "8.10.3",
+    "head_sha": ""
+  },
+  "patch_rev": 1,
+  "full_version": "8.10.3-r1",
+  "product": {
+    "sha256": "de47dc999f47aa47b05b5ae4993e9a8aa582f33f532f065e873fd1f1fb8be528",
+    "bytes": 128872,
+    "obfuscated": true,
+    "plain_sha256": "42cf81531b051ceb741c655365d908ba6da254555f332b046ad2a3ec8204b766",
+    "plain_bytes": 156324
+  },
+  "built_at": "2026-11-07 23:39:13 +0800",
+  "anchors": [
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5",
+    "A6"
+  ]
+}

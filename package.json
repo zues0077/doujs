@@ -1,0 +1,13 @@
+{
+  "name": "doujs-build",
+  "private": true,
+  "description": "构建期依赖：仅用于生成分发包，不随产物分发",
+  "scripts": {
+    "build": "python tools/pipeline.py",
+    "obfuscate": "node tools/obfuscate.cjs",
+    "measure": "node tests/measure-artifact.cjs"
+  },
+  "devDependencies": {
+    "javascript-obfuscator": "4.2.2"
+  }
+}

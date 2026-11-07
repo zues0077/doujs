@@ -1,0 +1,13 @@
+# 产物必须是 LF：CRLF 会污染 diff、也会让 G2 门禁在 Windows 工作区误判
+* text=auto eol=lf
+*.js text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.html text eol=lf
+
+# 二进制不要做换行转换
+*.png binary
+*.zip binary
