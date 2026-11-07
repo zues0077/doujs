@@ -1,18 +1,18 @@
 {
   "status": "BUILD_OK",
-  "run_at": "2026-11-07 23:37:58 +0800",
+  "run_at": "2026-11-07 23:41:08 +0800",
   "exit_code": 0,
   "upstream": {
     "branch": "master",
     "path": "lx-source.js",
     "blob_sha": "272cf4d02452febf831cc4e2a71c09c19b41e866",
-    "blob_note": "由本地文件计算，等价于 GitHub blob sha",
-    "head_sha": "",
+    "blob_note": "GitHub contents API 的 sha（即 blob sha）",
+    "head_sha": "e5c41bd7092a0ed9c2bc1a74a46b942d70dd2262",
     "version": "8.10.3"
   },
   "change_verdict": "上游 272cf4d02452 → 新产物 8.10.3-r1",
-  "last_good_version": "n/a",
-  "last_good_sha256": "n/a",
+  "last_good_version": "8.10.3-r1",
+  "last_good_sha256": "de47dc999f47aa47b05b5ae4993e9a8aa582f33f532f065e873fd1f1fb8be528",
   "product": {
     "fixed_filename": "doujs.js"
   },
@@ -114,12 +114,12 @@
     {
       "name": "G4 冒烟回归",
       "ok": true,
-      "detail": "用例 55 组 | 跑完 是 | 断言失败 1（已知差异 1 / 未知 0） | 已知：T46"
+      "detail": "用例 55 组 | 跑完 是 | 断言失败 0（已知差异 0 / 未知 0）"
     },
     {
       "name": "G5 采集闸门",
       "ok": true,
-      "detail": "score=10 classify=True risk=空 name='doujs' version='8.10.3-r1'（真实 checker.js）"
+      "detail": "score=10（阈值 4） risk=空（内置简化判定）"
     },
     {
       "name": "G6 版本一致",
@@ -146,7 +146,7 @@
     {
       "name": "G7 混淆产物体检",
       "ok": true,
-      "detail": "{\"verdict\": \"PASS\", \"risk\": \"none\", \"score\": 8, \"server\": \"B\", \"maxLine\": 613, \"bytes\": 128872, \"blockers\": []}"
+      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 613, \"bytes\": 128872, \"blockers\": []}"
     },
     {
       "name": "G3 协议探针",
@@ -161,7 +161,7 @@
     {
       "name": "G5 采集闸门",
       "ok": true,
-      "detail": "score=8 classify=True risk=空 name='doujs' version='8.10.3-r1'（真实 checker.js）"
+      "detail": "score=8（阈值 4） risk=空（内置简化判定）"
     },
     {
       "name": "G6 版本一致",
@@ -184,7 +184,7 @@
         "perKb": 0
       },
       "banner_preserved": true,
-      "elapsed_ms": 733
+      "elapsed_ms": 767
     }
   },
   "full_version": "8.10.3-r1",

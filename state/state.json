@@ -3,9 +3,9 @@
   "upstream": {
     "branch": "master",
     "path": "lx-source.js",
-    "blob_sha": "",
+    "blob_sha": "272cf4d02452febf831cc4e2a71c09c19b41e866",
     "version": "8.10.3",
-    "head_sha": ""
+    "head_sha": "e5c41bd7092a0ed9c2bc1a74a46b942d70dd2262"
   },
   "patch_rev": 1,
   "full_version": "8.10.3-r1",
@@ -16,7 +16,7 @@
     "plain_sha256": "42cf81531b051ceb741c655365d908ba6da254555f332b046ad2a3ec8204b766",
     "plain_bytes": 156324
   },
-  "built_at": "2026-11-07 23:39:13 +0800",
+  "built_at": "2026-11-07 23:42:16 +0800",
   "anchors": [
     "A1",
     "A2",

@@ -3,14 +3,14 @@
   "name": "doujs",
   "version": "8.10.3-r1",
   "patch_rev": 1,
-  "built_at": "2026-11-07 23:39:13 +0800",
+  "built_at": "2026-11-07 23:42:16 +0800",
   "filename": "doujs.js",
   "upstream": {
     "branch": "master",
     "path": "lx-source.js",
     "blob_sha": "272cf4d02452febf831cc4e2a71c09c19b41e866",
     "version": "8.10.3",
-    "head_sha": ""
+    "head_sha": "e5c41bd7092a0ed9c2bc1a74a46b942d70dd2262"
   },
   "product": {
     "sha256": "de47dc999f47aa47b05b5ae4993e9a8aa582f33f532f065e873fd1f1fb8be528",
@@ -34,7 +34,7 @@
         "perKb": 0
       },
       "banner_preserved": true,
-      "elapsed_ms": 733
+      "elapsed_ms": 767
     }
   },
   "download": {
