@@ -24,6 +24,7 @@ tools/patch.py            锚点匹配与替换，MATCH / DRIFT / SEMANTIC_DRIFT
 tools/gate.py             明文 6 项 + 混淆后 8 项门禁
 tools/obfuscate.cjs       混淆器（profile: light / medium）
 tools/obfuscate_step.py   混淆阶段封装（含三条硬约束自检）
+tools/heartbeat.py        月度心跳：每月一次空提交，防止定时任务被自动禁用
 tools/drift_report.py     RUN 报告 / 漂移工单 / CI Summary
 tests/verify_compat.cjs   协议形态离线探针（与宿主服务端同语义）
 tests/measure-artifact.cjs 产物判定（直接调用下游真实实现，不写等效复现）
@@ -106,6 +107,24 @@ tests/drift-drill.py      漂移演练（固化，可重复跑）
 
 五路告警：`latest.json` + `RUN-*.md` + 漂移工单 + Actions Job Summary + 自动开/追加 Issue
 （label `anchor-drift`）。构建成功后自动关闭遗留 Issue。
+
+## 定时任务不会自己停摆（月度心跳）
+
+GitHub 有一条容易忽略的规则：**public 仓库连续 60 天没有仓库活动，`schedule` 会被自动禁用**。
+一旦被禁用，上游就算更新了也不会有任何任务去跑门禁、发 Release，表现就是"静默停更"，
+而且不会收到任何通知——只有你主动翻 Actions 页面才会发现它已经不跑了。
+
+`tools/heartbeat.py` 把空窗压到 31 天以内：每月第一次运行时写入 `state/heartbeat.json`，
+当月后续运行全部跳过。正常情况下，每月恰好产生一次
+`chore: monthly heartbeat YYYY-MM` 提交，其余运行不产生任何提交。
+
+- 不依赖构建结果：步骤条件是 `!cancelled()`，锚点漂移导致 job 标红时照样提交；
+- `dry_run` 时不写、不提交；
+- 本地验证：`python tools/heartbeat.py --dry-run`，跨月行为可加
+  `--now 2027-01-01T00:00:00+00:00`。
+
+判据：如果连续两个月连这条提交都没有，说明定时已经不可靠了，去 Actions 页面手动
+`Run workflow` 一次即可恢复。
 
 ## 本地复现
 

@@ -173,6 +173,27 @@ jobs:
             gh issue close "$n" --comment "上游已重新对齐，锚点契约更新完成，产物已发布。"
           done
 
+      - name: 月度心跳（避免 public 仓库 60 天无提交被禁用定时）
+        # GitHub 规则：public 仓库连续 60 天没有仓库活动，schedule 会被自动禁用。
+        # 上游若长期不动脚本，追更就会**静默停更**。这里每月最多产生一次提交，
+        # 把空窗压到 31 天以内；同月后续运行一律跳过，不污染历史。
+        # 条件用 !cancelled() 而非 success()：漂移失败时更要保住定时任务本身还活着。
+        if: ${{ !cancelled() && inputs.dry_run != true }}
+        run: |
+          set -e
+          OUT=$(python tools/heartbeat.py)
+          echo "$OUT"
+          if ! printf '%s' "$OUT" | grep -q 'RESULT=WRITE'; then
+            echo "本月无需提交"
+            exit 0
+          fi
+          MONTH=$(python -c "import json;print(json.load(open('state/heartbeat.json',encoding='utf-8'))['month'])")
+          git config user.name "sync-bot"
+          git config user.email "sync-bot@users.noreply.github.com"
+          git add state/heartbeat.json
+          git commit -m "chore: monthly heartbeat ${MONTH}"
+          git push
+
       - name: 失败时让 job 标红（报告已上传）
         if: steps.pipe.outputs.code != '0'
         run: |
