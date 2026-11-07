@@ -3,7 +3,7 @@
   "upstream": {
     "branch": "master",
     "path": "lx-source.js",
-    "blob_sha": "272cf4d02452febf831cc4e2a71c09c19b41e866",
+    "blob_sha": "",
     "version": "8.10.3",
     "head_sha": ""
   },
