@@ -44,7 +44,6 @@
   },
   "hunter": {
     "add_as_repo": "zues0077/doujs",
-    "or_web_repo": "https://raw.githubusercontent.com/zues0077/doujs/main/docs/index.html",
     "suggested_filename": "doujs.js",
     "release_asset": "doujs.js",
     "note": "固定 @name 与文件名，勿改；猎手按 name 分组去重，改名会产生重复脚本。"

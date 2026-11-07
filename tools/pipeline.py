@@ -71,38 +71,6 @@ def _public_base() -> str:
             f"https://raw.githubusercontent.com/{_repo_slug()}/main").rstrip("/")
 
 
-def _render_index_html(manifest: dict[str, Any]) -> str:
-    """网页入口：让采集器把本仓库当 webRepo 采集（零 GitHub 配额）。
-
-    公开分发场景下本页刻意中性：不出现用途词，避免被站外搜索命中。
-    版本号单独成列 —— 猎手 extractLinkMeta 只从「不含文件名的单元格」取版本。
-    """
-    fn = Path(manifest["filename"]).name
-    base = fn[:-3] if fn.endswith(".js") else fn
-    ver = manifest["version"]
-    day = manifest["built_at"][:10]
-    url = manifest["download"]["release_latest"]
-    return f"""<!doctype html>
-<html lang="zh-CN">
-<head><meta charset="utf-8"><title>{base}</title></head>
-<body>
-<h1>{base}</h1>
-<p>version <code>{ver}</code> · updated {day} · patch rev {manifest['patch_rev']}</p>
-<p>upstream blob <code>{manifest['upstream']['blob_sha'][:12]}</code></p>
-<table border="1" cellpadding="6">
-<tr><th>name</th><th>version</th><th>updated</th><th>file</th></tr>
-<tr>
-  <td>{base}</td>
-  <td>{ver}</td>
-  <td>{day}</td>
-  <td><a href="{url}">{fn}</a></td>
-</tr>
-</table>
-<p>sha256 <code>{manifest['product']['sha256']}</code> · {manifest['product']['bytes']} bytes</p>
-</body>
-</html>
-"""
-
 
 def build(args: argparse.Namespace) -> int:
     root = Path(args.repo_root).resolve()
@@ -266,7 +234,6 @@ def build(args: argparse.Namespace) -> int:
         },
         "hunter": {
             "add_as_repo": _repo_slug(),
-            "or_web_repo": f"https://raw.githubusercontent.com/{_repo_slug()}/main/docs/index.html",
             "suggested_filename": fixed_filename,
             "release_asset": fixed_filename,
             "note": "固定 @name 与文件名，勿改；猎手按 name 分组去重，改名会产生重复脚本。",
@@ -285,9 +252,6 @@ def build(args: argparse.Namespace) -> int:
         "built_at": manifest["built_at"],
         "anchors": manifest["anchors"],
     })
-    docs = root / "docs"
-    docs.mkdir(parents=True, exist_ok=True)
-    (docs / "index.html").write_text(_render_index_html(manifest), encoding="utf-8", newline="\n")
 
     data.update(status="BUILD_OK", exit_code=EXIT_OK,
                 change_verdict=f"上游 {up['blob_sha'][:12]} → 新产物 {res.full_version}",
@@ -299,7 +263,7 @@ def build(args: argparse.Namespace) -> int:
         print(f"  {'PASS' if g['ok'] else 'FAIL'} {g['name']}: {str(g['detail'])[:140]}")
     for g in (data.get("obf_gates") or []):
         print(f"  {'PASS' if g['ok'] else 'FAIL'} {g['name']}: {str(g['detail'])[:140]}")
-    print(f"  已更新：{final_product} / manifest.json / state/state.json / docs/index.html")
+    print(f"  已更新：{final_product} / manifest.json / state/state.json")
     print(f"  报告：{out['run_md']}")
     return EXIT_OK
 

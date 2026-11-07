@@ -159,10 +159,8 @@ python tests/drift-drill.py --upstream /path/to/lx-source.js --smoke-test /path/
 
 产物已适配采集器的两道闸门（`scoreEntry ≥ 4`、混淆风险为空），实测 `scoreEntry = 8`。
 
-两种接入任选：
-
-- **仓库清单**：把 `<owner>/<repo>` 加进采集器仓库列表 —— 树内没有 `.js`，会走「Release 资产分发」分支判定；
-- **网页源**：`docs/index.html`（零 GitHub 配额），表格里版本号单独成列。
+接入方式：把 `<owner>/<repo>` 加进采集器仓库列表。树内没有 `.js`，会走「Release 资产分发」分支判定。
+不提供网页入口 —— 单一入口少一处会腐化的东西，也不用额外维护页面与版本号的一致性。
 
 硬约束：**`@name` 与文件名必须长期固定**，改名会被当成新条目重复入库；文件名不带版本号，
 版本只放 `@version` 与 `manifest.json`。Release tag 用 `v<version>`，版本变化即触发更新。
