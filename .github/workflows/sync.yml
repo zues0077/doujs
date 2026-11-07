@@ -153,6 +153,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
+          # 兜底创建 label：仓库 fork/重建时 label 不会跟着走，
+          # 缺了它 gh issue create 会 422 失败 —— 告警链会静默断掉。
+          gh label create anchor-drift --color d73a4a \
+            --description "上游锚点失配：需人工按 Issue 清单更新 anchors.json" --force >/dev/null 2>&1 || true
           UP=$(python -c "import json;print(json.load(open('reports/latest.json',encoding='utf-8'))['upstream']['blob_sha'][:8])" 2>/dev/null || echo unknown)
           TITLE="[sync] 上游漂移 ${UP}：需人工更新 anchors.json"
           EXIST=$(gh issue list --label anchor-drift --state open --json number,title \
