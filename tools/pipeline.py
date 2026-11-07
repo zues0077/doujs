@@ -46,6 +46,22 @@ def _write_json(p: Path, data: dict[str, Any]) -> None:
     p.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
+def next_patch_rev(state: dict[str, Any], new_upstream_version: str,
+                   explicit: int | None = None) -> int:
+    """决定 patch_rev。
+
+    判据必须是「上游 @version 是否变化」，不能拿 blob_sha 比：
+    NO_CHANGE 分支已经把「blob 相同」的情形提前返回了，走到构建这一步 blob 必然变了，
+    用 blob 比会让 rev 永远重置成 1 —— 于是上游「改了代码但没升 @version」时产物版本号不变，
+    同名 tag 已存在，Release 被当成「已发过」跳过，出现「状态提交了、附件还是旧的」的静默失效。
+    """
+    if explicit:
+        return int(explicit)
+    prev_ver = (state.get("upstream") or {}).get("version", "")
+    same_version = bool(prev_ver) and prev_ver == new_upstream_version
+    return (state.get("patch_rev") or 0) + 1 if same_version else 1
+
+
 def _repo_slug() -> str:
     return os.environ.get("GITHUB_REPOSITORY") or "zues0077/doujs"
 
@@ -131,8 +147,11 @@ def build(args: argparse.Namespace) -> int:
         print(f"[NO_CHANGE] 上游脚本未变：{up['blob_sha'][:12]}；报告 {out['run_md']}")
         return EXIT_OK
 
-    same_upstream = last_blob == up["blob_sha"]
-    patch_rev = args.patch_rev or ((state.get("patch_rev", 0) + 1) if same_upstream else 1)
+    try:
+        new_up_version = patch_mod.parse_upstream_version(up["text"])
+    except Exception:
+        new_up_version = ""
+    patch_rev = next_patch_rev(state, new_up_version, args.patch_rev)
     res = patch_mod.apply_patches(up["text"], contract, patch_rev)
     data["full_version"] = res.full_version
     data["applied"] = res.applied

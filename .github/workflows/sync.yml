@@ -98,6 +98,36 @@ jobs:
           retention-days: 30
           if-no-files-found: ignore
 
+      - name: 发布 Release（产物唯一分发通道）
+        if: steps.pipe.outputs.status == 'BUILD_OK' && inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          VERSION=$(python -c "import json;print(json.load(open('manifest.json',encoding='utf-8'))['version'])")
+          FN=$(python -c "import json;print(json.load(open('manifest.json',encoding='utf-8'))['filename'])")
+          UP=$(python -c "import json;d=json.load(open('manifest.json',encoding='utf-8'));print(d['upstream']['blob_sha'][:8])")
+          SHA=$(python -c "import json;d=json.load(open('manifest.json',encoding='utf-8'));print(d['product']['sha256'])")
+          TAG="v${VERSION}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            # 同名 tag 已存在时必须比对资产内容，不能一律「跳过」：
+            # 否则上游改了代码但没升 @version 时，产物会被静默丢弃，页面/清单指向旧文件。
+            EXIST=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" --jq '.assets[0].digest // ""')
+            if [ -n "$EXIST" ] && [ "$EXIST" != "sha256:${SHA}" ]; then
+              echo "::error::Release ${TAG} 已存在但资产 sha256 不一致（${EXIST} vs sha256:${SHA}）——版本号没有递增，新产物无法发布"
+              exit 1
+            fi
+            echo "Release ${TAG} 已存在且资产一致（${EXIST}），跳过"
+            exit 0
+          fi
+          if [ ! -f "dist/${FN}" ]; then echo "缺少产物 dist/${FN}"; exit 1; fi
+          gh release create "$TAG" "dist/${FN}" \
+            --title "${VERSION}" \
+            --notes "upstream blob ${UP}
+
+            sha256 \`${SHA}\`" \
+            --latest
+
       - name: 提交状态与网页入口（产物不入库）
         id: commit
         if: steps.pipe.outputs.status == 'BUILD_OK' && inputs.dry_run != true
@@ -116,29 +146,6 @@ jobs:
           git commit -m "chore: sync upstream ${UP} -> ${VERSION}"
           git push
           echo "changed=true" >> "$GITHUB_OUTPUT"
-
-      - name: 发布 Release（产物唯一分发通道）
-        if: steps.pipe.outputs.status == 'BUILD_OK' && inputs.dry_run != true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -e
-          VERSION=$(python -c "import json;print(json.load(open('manifest.json',encoding='utf-8'))['version'])")
-          FN=$(python -c "import json;print(json.load(open('manifest.json',encoding='utf-8'))['filename'])")
-          UP=$(python -c "import json;d=json.load(open('manifest.json',encoding='utf-8'));print(d['upstream']['blob_sha'][:8])")
-          SHA=$(python -c "import json;d=json.load(open('manifest.json',encoding='utf-8'));print(d['product']['sha256'])")
-          TAG="v${VERSION}"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release ${TAG} 已存在，跳过（同一上游版本不重复发）"
-            exit 0
-          fi
-          if [ ! -f "dist/${FN}" ]; then echo "缺少产物 dist/${FN}"; exit 1; fi
-          gh release create "$TAG" "dist/${FN}" \
-            --title "${VERSION}" \
-            --notes "upstream blob ${UP}
-
-            sha256 \`${SHA}\`" \
-            --latest
 
       - name: 漂移/门禁失败时开 Issue 提醒人工更新锚点
         if: steps.pipe.outputs.code == '2' || steps.pipe.outputs.code == '3'
