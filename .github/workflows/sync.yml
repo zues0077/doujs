@@ -71,13 +71,7 @@ jobs:
             -w '%{http_code}' \
             "https://api.github.com/repos/${UP_REPO}/contents/scripts?ref=${UP_BRANCH}")
           if [ "$HTTP" = "200" ]; then
-            NAMES=$(python3 -c "
-import json
-d = json.load(open('/tmp/upstream/scripts-list.json', encoding='utf-8'))
-for x in d:
-    if isinstance(x, dict) and x.get('type') == 'file' and str(x.get('name','')).endswith('.js'):
-        print(x['name'])
-")
+            NAMES=$(python3 -c "import json;d=json.load(open('/tmp/upstream/scripts-list.json',encoding='utf-8'));print('\n'.join(x['name'] for x in d if isinstance(x,dict) and x.get('type')=='file' and str(x.get('name','')).endswith('.js')))")
             N=0
             for f in $NAMES; do
               curl -sSL --retry 3 --max-time 60 -o "/tmp/upstream/scripts/$f" \
@@ -198,11 +192,7 @@ for x in d:
             TITLE="[sync] 上游漂移 ${UP}：需人工更新 anchors.json"
           else
             LABEL="gate-failure"
-            KIND=$(python -c "
-import json
-d = json.load(open('reports/latest.json', encoding='utf-8'))
-g = [x for x in (d.get('gates') or []) if 'G4' in str(x.get('name',''))]
-print((g[0].get('kind') if g and isinstance(g[0], dict) else '') or '')" 2>/dev/null || echo "")
+            KIND=$(python -c "import json;d=json.load(open('reports/latest.json',encoding='utf-8'));g=[x for x in (d.get('gates') or []) if 'G4' in str(x.get('name',''))];print((g[0].get('kind') if g and isinstance(g[0],dict) else '') or '')" 2>/dev/null || echo "")
             if [ "$KIND" = "missing-deps" ]; then
               TITLE="[sync] 门禁取材缺口 ${UP}：冒烟用例缺同仓依赖（勿改 anchors.json）"
             else
