@@ -1,16 +1,16 @@
 {
   "status": "BUILD_OK",
-  "run_at": "2026-11-07 23:41:08 +0800",
+  "run_at": "2026-11-09 07:16:40 +0800",
   "exit_code": 0,
   "upstream": {
     "branch": "master",
     "path": "lx-source.js",
-    "blob_sha": "272cf4d02452febf831cc4e2a71c09c19b41e866",
+    "blob_sha": "bebd648f676acbac4ab88f3f21cb7362f954441d",
     "blob_note": "GitHub contents API 的 sha（即 blob sha）",
-    "head_sha": "e5c41bd7092a0ed9c2bc1a74a46b942d70dd2262",
-    "version": "8.10.3"
+    "head_sha": "1803be31433a7b63c1b96f0372c679936e11983a",
+    "version": "8.10.12"
   },
-  "change_verdict": "上游 272cf4d02452 → 新产物 8.10.3-r1",
+  "change_verdict": "上游 bebd648f676a → 新产物 8.10.12-r1",
   "last_good_version": "8.10.3-r1",
   "last_good_sha256": "de47dc999f47aa47b05b5ae4993e9a8aa582f33f532f065e873fd1f1fb8be528",
   "product": {
@@ -35,28 +35,28 @@
       "id": "A3",
       "title": "inited 上报 actions 收敛为 ['musicUrl']",
       "kind": "replace_block_once",
-      "before_line": 2409,
+      "before_line": 2435,
       "added_lines": -3
     },
     {
       "id": "A4",
       "title": "musicUrl 返回值解包成字符串",
       "kind": "replace_block_once",
-      "before_line": 2558,
+      "before_line": 2584,
       "added_lines": 5
     },
     {
       "id": "A5",
       "title": "关闭脚本内部 600s 自排健康探测",
       "kind": "replace_block_once",
-      "before_line": 2578,
+      "before_line": 2604,
       "added_lines": 2
     },
     {
       "id": "A6",
       "title": "加载日志单行收敛",
       "kind": "regex_replace_once",
-      "before_line": 2576
+      "before_line": 2602
     }
   ],
   "drifts": [],
@@ -114,7 +114,8 @@
     {
       "name": "G4 冒烟回归",
       "ok": true,
-      "detail": "用例 55 组 | 跑完 是 | 断言失败 0（已知差异 0 / 未知 0）"
+      "kind": "ok",
+      "detail": "用例 60 组 | 跑完 是 | 断言失败 0（已知差异 0 / 混淆豁免 0 / 未知 0）"
     },
     {
       "name": "G5 采集闸门",
@@ -124,7 +125,7 @@
     {
       "name": "G6 版本一致",
       "ok": true,
-      "detail": "doujs @ 8.10.3-r1"
+      "detail": "doujs @ 8.10.12-r1"
     }
   ],
   "obf_gates": [
@@ -146,7 +147,7 @@
     {
       "name": "G7 混淆产物体检",
       "ok": true,
-      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 613, \"bytes\": 128872, \"blockers\": []}"
+      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 705, \"bytes\": 130147, \"blockers\": []}"
     },
     {
       "name": "G3 协议探针",
@@ -156,7 +157,8 @@
     {
       "name": "G4 冒烟回归",
       "ok": true,
-      "detail": "用例 55 组 | 跑完 是 | 断言失败 0（已知差异 0 / 未知 0）"
+      "kind": "ok",
+      "detail": "用例 57 组 | 跑完 是 | 断言失败 0（已知差异 0 / 混淆豁免 0 / 未知 0） | 剔除 3 个静态源码扫描用例（混淆产物上无运行时含义，明文门禁已全量把关）"
     },
     {
       "name": "G5 采集闸门",
@@ -166,7 +168,7 @@
     {
       "name": "G6 版本一致",
       "ok": true,
-      "detail": "doujs @ 8.10.3-r1"
+      "detail": "doujs @ 8.10.12-r1"
     }
   ],
   "obfuscation": {
@@ -175,18 +177,18 @@
     "stats": {
       "profile": "medium",
       "seed": 20261107,
-      "input_bytes": 156324,
-      "output_bytes": 128872,
+      "input_bytes": 158911,
+      "output_bytes": 130147,
       "ratio": 1,
-      "max_line_length": 613,
+      "max_line_length": 705,
       "hex": {
         "total": 0,
         "perKb": 0
       },
       "banner_preserved": true,
-      "elapsed_ms": 767
+      "elapsed_ms": 621
     }
   },
-  "full_version": "8.10.3-r1",
-  "product_sha256": "de47dc999f47aa47b05b5ae4993e9a8aa582f33f532f065e873fd1f1fb8be528"
+  "full_version": "8.10.12-r1",
+  "product_sha256": "5ad6e5143cc61a30c45e386ebdaa9aeae6f39defbd48e0220ee9bfbe2c66bf98"
 }
