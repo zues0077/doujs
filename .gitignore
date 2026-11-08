@@ -11,3 +11,7 @@ reports/ANCHOR-DRIFT-*.md
 !reports/ci-summary.md
 .DS_Store
 Thumbs.db
+# 本地复现材料：上游原件与冒烟用例（不入库——仓库树内不放上游 .js）
+/up-lx-source.js
+/up-smoke.js
+/updata/

@@ -142,7 +142,8 @@ def build(args: argparse.Namespace) -> int:
     tmp_product.write_bytes(res.text.encode("utf-8"))
 
     gate_results = gates_mod.run_all(tmp_product, res.text, root, fixed_name,
-                                     res.full_version, Path(args.smoke_test) if args.smoke_test else None)
+                                     res.full_version, Path(args.smoke_test) if args.smoke_test else None,
+                                     Path(args.smoke_data) if args.smoke_data else None)
     data["gates"] = gate_results
     if not all(g["ok"] for g in gate_results):
         data.update(status="GATE_FAILED", exit_code=EXIT_GATE,
@@ -180,7 +181,8 @@ def build(args: argparse.Namespace) -> int:
             return EXIT_GATE
         obf_gates = gates_mod.run_obf_checks(
             obf_product, root, fixed_name, res.full_version,
-            Path(args.smoke_test) if args.smoke_test else None)
+            Path(args.smoke_test) if args.smoke_test else None,
+            Path(args.smoke_data) if args.smoke_data else None)
         data["obf_gates"] = obf_gates
         if not all(g["ok"] for g in obf_gates):
             data.update(status="GATE_FAILED", exit_code=EXIT_GATE,
@@ -273,6 +275,8 @@ def main() -> None:
     ap.add_argument("--repo-root", default=str(Path(__file__).resolve().parent.parent))
     ap.add_argument("--upstream-file", default="", help="本地上游 lx-source.js（离线复现，跳过网络）")
     ap.add_argument("--smoke-test", default="", help="上游冒烟用例路径（tests/lx-source-smoke-test.js）")
+    ap.add_argument("--smoke-data", default="",
+                    help="冒烟用例依赖的同仓模块目录（上游 scripts/，8.10.12 起用例直接 require；不传则视为无额外依赖）")
     ap.add_argument("--patch-rev", type=int, default=0, help="强制补丁修订号")
     ap.add_argument("--force", action="store_true", help="blob sha 未变也重建")
     ap.add_argument("--dry-run", action="store_true", help="门禁通过也不落盘")

@@ -63,6 +63,33 @@ jobs:
             -o /tmp/upstream/lx-source-smoke-test.js \
             "https://raw.githubusercontent.com/${UP_REPO}/${UP_BRANCH}/test/lx-source-smoke-test.js"
           wc -c /tmp/upstream/lx-source-smoke-test.js
+          # 上游 8.10.12 起冒烟用例直接 require 同仓 scripts/*.js（endpoint-registry 等）。
+          # 只下载用例单文件会让 G4 崩在 MODULE_NOT_FOUND（58 组跑不完）——那是取材缺口，
+          # 不是产物不兼容。这里整目录枚举供给；上游没有 scripts/ 时按无依赖处理，不报错。
+          mkdir -p /tmp/upstream/scripts
+          HTTP=$(curl -sSL --retry 3 --max-time 60 -o /tmp/upstream/scripts-list.json \
+            -w '%{http_code}' \
+            "https://api.github.com/repos/${UP_REPO}/contents/scripts?ref=${UP_BRANCH}")
+          if [ "$HTTP" = "200" ]; then
+            NAMES=$(python3 -c "
+import json
+d = json.load(open('/tmp/upstream/scripts-list.json', encoding='utf-8'))
+for x in d:
+    if isinstance(x, dict) and x.get('type') == 'file' and str(x.get('name','')).endswith('.js'):
+        print(x['name'])
+")
+            N=0
+            for f in $NAMES; do
+              curl -sSL --retry 3 --max-time 60 -o "/tmp/upstream/scripts/$f" \
+                "https://raw.githubusercontent.com/${UP_REPO}/${UP_BRANCH}/scripts/$f" || exit 1
+              N=$((N+1))
+            done
+            echo "上游 scripts/ 依赖：${N} 个文件"
+            ls -la /tmp/upstream/scripts/
+          else
+            echo "上游无 scripts/ 目录（HTTP $HTTP），按无额外依赖处理"
+            rmdir /tmp/upstream/scripts 2>/dev/null || true
+          fi
 
       - name: 运行流水线（明文门禁 → 混淆 → 混淆后复验）
         id: pipe
@@ -73,6 +100,7 @@ jobs:
         run: |
           set +e
           ARGS="--smoke-test /tmp/upstream/lx-source-smoke-test.js --profile medium"
+          if [ -d /tmp/upstream/scripts ]; then ARGS="$ARGS --smoke-data /tmp/upstream/scripts"; fi
           if [ "${{ inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
           if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
           python tools/pipeline.py $ARGS 2>&1 | tee /tmp/pipeline.log
@@ -147,7 +175,7 @@ jobs:
           git push
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      - name: 漂移/门禁失败时开 Issue 提醒人工更新锚点
+      - name: 漂移/门禁失败时开 Issue 提醒人工处理
         if: steps.pipe.outputs.code == '2' || steps.pipe.outputs.code == '3'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -157,24 +185,48 @@ jobs:
           # 缺了它 gh issue create 会 422 失败 —— 告警链会静默断掉。
           gh label create anchor-drift --color d73a4a \
             --description "上游锚点失配：需人工按 Issue 清单更新 anchors.json" --force >/dev/null 2>&1 || true
+          gh label create gate-failure --color d93f0b \
+            --description "门禁失败：先看是否取材/依赖问题，勿直接改 anchors.json" --force >/dev/null 2>&1 || true
           UP=$(python -c "import json;print(json.load(open('reports/latest.json',encoding='utf-8'))['upstream']['blob_sha'][:8])" 2>/dev/null || echo unknown)
-          TITLE="[sync] 上游漂移 ${UP}：需人工更新 anchors.json"
-          EXIST=$(gh issue list --label anchor-drift --state open --json number,title \
+          # 两类失败必须分流（2026-11-08 教训：G4 因取材缺 MODULE_NOT_FOUND，
+          # Issue 标题却写「需人工更新 anchors.json」，维护者按标题去改锚点会白忙半天）：
+          #   code=2 → ANCHOR_DRIFT：补丁锚点真的失配，去更新 anchors.json
+          #   code=3 → HARNESS_BROKEN/GATE_FAILED：锚点全过（本次 drift=0），先查
+          #            取材/依赖（G4 kind=missing-deps）或真实断言失败
+          if [ "${{ steps.pipe.outputs.code }}" = "2" ]; then
+            LABEL="anchor-drift"
+            TITLE="[sync] 上游漂移 ${UP}：需人工更新 anchors.json"
+          else
+            LABEL="gate-failure"
+            KIND=$(python -c "
+import json
+d = json.load(open('reports/latest.json', encoding='utf-8'))
+g = [x for x in (d.get('gates') or []) if 'G4' in str(x.get('name',''))]
+print((g[0].get('kind') if g and isinstance(g[0], dict) else '') or '')" 2>/dev/null || echo "")
+            if [ "$KIND" = "missing-deps" ]; then
+              TITLE="[sync] 门禁取材缺口 ${UP}：冒烟用例缺同仓依赖（勿改 anchors.json）"
+            else
+              TITLE="[sync] 门禁失败 ${UP}：GATE_FAILED（锚点 0 失配，勿改 anchors.json）"
+            fi
+          fi
+          EXIST=$(gh issue list --label "$LABEL" --state open --json number,title \
                   --jq ".[] | select(.title | contains(\"${UP}\")) | .number" | head -1)
           if [ -n "$EXIST" ]; then
             gh issue comment "$EXIST" --body-file reports/ci-summary.md
             echo "已追加到 Issue #$EXIST"
           else
-            gh issue create --title "$TITLE" --label anchor-drift --body-file reports/ci-summary.md
+            gh issue create --title "$TITLE" --label "$LABEL" --body-file reports/ci-summary.md
           fi
 
-      - name: 构建成功后关闭遗留漂移 Issue
+      - name: 构建成功后关闭遗留漂移/门禁 Issue
         if: steps.pipe.outputs.status == 'BUILD_OK' && inputs.dry_run != true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          for n in $(gh issue list --label anchor-drift --state open --json number --jq '.[].number'); do
-            gh issue close "$n" --comment "上游已重新对齐，锚点契约更新完成，产物已发布。"
+          for l in anchor-drift gate-failure; do
+            for n in $(gh issue list --label "$l" --state open --json number --jq '.[].number'); do
+              gh issue close "$n" --comment "上游已重新对齐，门禁全部通过，产物已发布。"
+            done
           done
 
       - name: 月度心跳（避免 public 仓库 60 天无提交被禁用定时）

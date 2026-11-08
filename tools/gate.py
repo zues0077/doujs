@@ -124,16 +124,95 @@ def _known_diffs(root: Path) -> list[dict[str, Any]]:
         return []
 
 
-def g4_smoke(product: Path, smoke_test: Path | None, root: Path) -> dict[str, Any]:
+# 上游 8.10.12 起冒烟新增「读产物源码文本」的静态解析用例（T58-T6x：parseToggles 找
+# `const SOURCE_TOGGLES = {` 字面标记、ENDPOINTS 扫描、登记表主机存活 includes）。
+# 混淆产物上这些**注定失败**：混淆器把 `const SOURCE_TOGGLES = {` 合并进相邻声明链
+# （`, SOURCE_TOGGLES = {`），字符串进 base64 数组 —— 这是混淆的目的，不是行为缺陷
+# （线上 8.10.3-r1 产物同样形态，运行时 SOURCE_TOGGLES/ENDPOINTS 全部正常）。
+# 处理分两层（allow_obf_static=True 时启用，仅混淆后复验）：
+#   ① 整块剔除静态扫描用例（_strip_static_scan_cases）：parseToggles 找不到 MARK 会直接
+#      throw（非 assert，SOFT_ASSERT 兜不住）→ 进程 exit=1、「冒烟测试完成」打不出来；
+#   ② OBF_STATIC_MARKERS 断言豁免兜底：防上游出现漏网的静态断言文案。
+# 明文门禁仍跑全量严格判定，真丢了这些标记在明文阶段就会被拦住。
+OBF_STATIC_MARKERS = (
+    "SOURCE_TOGGLES",
+    "登记表端点",                            # T59 主机存活断言
+    "已不在 lx-source.js 的运行时引用中出现",  # T59
+    "没有任何登记端点",                       # T60 失明断言
+    "ENDPOINTS",
+)
+
+
+def _strip_static_scan_cases(js: str) -> tuple[str, int]:
+    """剔除「读产物源码文本做静态解析」的上游用例块（混淆产物复验专用）。
+
+    判据按用例块内容：引用了 endpoint-registry / source-toggles 模块，或
+    readFileSync 读 lx-source.js 做 SOURCE_TOGGLES 文本扫描 —— 都是静态形态断言；
+    行为类用例（fork 产物 / 走协议）不含这些特征，不会误删。
+    """
+    chunks = re.split(r"(?=console\.log\('\[T\d+[a-z]?\])", js)
+    kept: list[str] = []
+    removed = 0
+    for i, chunk in enumerate(chunks):
+        if i and ("endpoint-registry" in chunk or "parseToggles" in chunk
+                  or ("SOURCE_TOGGLES" in chunk and "readFileSync" in chunk)):
+            removed += 1
+            continue
+        kept.append(chunk)
+    return "".join(kept), removed
+
+
+def _strip_static_scan_cases(js: str) -> tuple[str, int]:
+    """剔除「读产物源码文本做静态解析」的上游用例块（混淆产物复验专用）。
+
+    判据按用例块内容：引用了 endpoint-registry / source-toggles 模块，或
+    readFileSync 读 lx-source.js 做 SOURCE_TOGGLES 文本扫描 —— 都是静态形态断言；
+    行为类用例（fork 产物 / 走协议）不含这些特征，不会误删。
+
+    **不能**用 uncaughtException 软化替代：实测注入后产物内部健康探测 interval
+    永不清理，进程挂起不退出（原方案靠异常崩溃退出）。文本剔除时必须把
+    最后一个静态块后面携带的「冒烟测试完成」收尾代码切回来，否则 IIFE 尾
+    `})();` 被误删、整个文件语法崩（Unexpected end of input）。
+    """
+    FINISH = "console.log('\\n冒烟测试完成"
+    chunks = re.split(r"(?=console\.log\('\[T\d+[a-z]?\])", js)
+    kept: list[str] = []
+    removed = 0
+    for i, chunk in enumerate(chunks):
+        if i and ("endpoint-registry" in chunk or "parseToggles" in chunk
+                  or ("SOURCE_TOGGLES" in chunk and "readFileSync" in chunk)):
+            removed += 1
+            if FINISH in chunk:  # 收尾代码（冒烟完成 + exit + IIFE 尾）不在剔除范围
+                kept.append(chunk[chunk.index(FINISH):])
+            continue
+        kept.append(chunk)
+    return "".join(kept), removed
+
+
+def g4_smoke(product: Path, smoke_test: Path | None, root: Path,
+             smoke_data: Path | None = None,
+             allow_obf_static: bool = False) -> dict[str, Any]:
+    """G4 冒烟回归。
+
+    smoke_data：上游用例依赖的同仓模块目录（8.10.12 起新增 `scripts/*.js`，用例直接
+    `require(__dirname/../scripts/endpoint-registry.js)`）。取材必须整目录供给，
+    否则 T59 崩 MODULE_NOT_FOUND、进程 exit=1、58 组跑不完 —— 那是取材缺口，
+    不是产物兼容性问题，更不能按「锚点漂移」去修 anchors.json。
+    """
     if not smoke_test or not Path(smoke_test).is_file():
-        return {"name": "G4 冒烟回归", "ok": False,
+        return {"name": "G4 冒烟回归", "ok": False, "kind": "no-case",
                 "detail": "未提供上游冒烟用例（--smoke-test），CI 会在构建前从上游拉取；本地必须显式传路径"}
     with tempfile.TemporaryDirectory(prefix="b2-smoke-") as td:
         tmp = Path(td)
         (tmp / "test").mkdir(parents=True, exist_ok=True)
         shutil.copyfile(product, tmp / "lx-source.js")
         patched = _patch_smoke(Path(smoke_test).read_text(encoding="utf-8"))
+        stripped = 0
+        if allow_obf_static:
+            patched, stripped = _strip_static_scan_cases(patched)
         (tmp / "test" / "smoke.cjs").write_text(patched, encoding="utf-8")
+        if smoke_data and Path(smoke_data).is_dir():
+            shutil.copytree(smoke_data, tmp / "scripts")
         code, out, err = _run([NODE, str(tmp / "test" / "smoke.cjs")], cwd=tmp, timeout=300)
 
     case_count = len(re.findall(r"^\[T\d+\]", out, re.MULTILINE))
@@ -147,21 +226,41 @@ def g4_smoke(product: Path, smoke_test: Path | None, root: Path) -> dict[str, An
             except Exception:
                 pass
     allowed = _known_diffs(root)
-    unknown, known = [], []
+    unknown, known, obf_static = [], [], []
     for f in soft:
         hit = next((a for a in allowed if a.get("assertion") and a["assertion"] in f.get("msg", "")), None)
+        if not hit and allow_obf_static and any(m in f.get("msg", "") for m in OBF_STATIC_MARKERS):
+            hit = {"id": "OBF-STATIC-SCAN"}
+            obf_static.append((f, hit))
+            continue
         (known if hit else unknown).append((f, hit))
 
     ok = completed and not unknown
     parts = [f"用例 {case_count} 组", f"跑完 {'是' if completed else '否'}",
-             f"断言失败 {len(soft)}（已知差异 {len(known)} / 未知 {len(unknown)}）"]
+             f"断言失败 {len(soft)}（已知差异 {len(known)} / 混淆豁免 {len(obf_static)} / 未知 {len(unknown)}）"]
+    if stripped:
+        parts.append(f"剔除 {stripped} 个静态源码扫描用例（混淆产物上无运行时含义，明文门禁已全量把关）")
     if known:
         parts.append("已知：" + "；".join(f"{a['id']}" for _, a in known))
+    if obf_static:
+        # 混淆豁免必须可见：这是「静态扫描在混淆产物上预期失败」，不是被静默放行
+        kinds = sorted({("SOURCE_TOGGLES" if "SOURCE_TOGGLES" in f.get("msg", "") else "ENDPOINTS")
+                        for f, _ in obf_static})
+        parts.append(f"混淆豁免（{'/'.join(kinds)} 静态解析，运行时行为由其余用例覆盖）")
     if unknown:
         parts.append("未知：" + "；".join(f.get("msg", "")[:90] for f, _ in unknown[:3]))
+    kind = "ok"
     if not completed:
         parts.append(f"exit={code} " + (err.splitlines()[0][:120] if err else ""))
-    return {"name": "G4 冒烟回归", "ok": ok, "detail": " | ".join(parts)}
+        # 显式区分「取材缺口」与「断言失败」：MODULE_NOT_FOUND 说明是 harness 没把
+        # 用例依赖的同仓模块供给临时目录（上游加了 require，我们的取材步骤没跟上），
+        # 修法是补取材，不是改 anchors、也不是产物不兼容。
+        if "MODULE_NOT_FOUND" in (out + err):
+            kind = "missing-deps"
+            parts.append("缺依赖（harness 取材缺口：用例 require 的同仓模块未随用例供给）——非断言失败，勿据此改 anchors.json")
+        else:
+            kind = "harness-error"
+    return {"name": "G4 冒烟回归", "ok": ok, "kind": kind, "detail": " | ".join(parts)}
 
 
 def _local_hunter_checker() -> Path | None:
@@ -306,12 +405,13 @@ def g8_obf_risk(text: str) -> dict[str, Any]:
 
 
 def run_all(product: Path, text: str, root: Path, fixed_name: str,
-            full_version: str, smoke_test: Path | None) -> list[dict[str, Any]]:
+            full_version: str, smoke_test: Path | None,
+            smoke_data: Path | None = None) -> list[dict[str, Any]]:
     gates = [
         g1_syntax(product),
         g2_shape(product, text, fixed_name, full_version),
         g3_probe(product, root),
-        g4_smoke(product, smoke_test, root),
+        g4_smoke(product, smoke_test, root, smoke_data),
         g5_collect_gate(product, text, product.name),
         g6_versions(product, text, full_version, fixed_name),
     ]
@@ -319,7 +419,7 @@ def run_all(product: Path, text: str, root: Path, fixed_name: str,
 
 
 def run_obf_checks(obf: Path, root: Path, fixed_name: str, full_version: str,
-                   smoke_test: Path | None) -> list[dict[str, Any]]:
+                   smoke_test: Path | None, smoke_data: Path | None = None) -> list[dict[str, Any]]:
     """混淆产物复验：混淆是不可逆步骤，所以过完门禁的明文混淆完之后要**整套重验**。
 
     重点不是重复，而是验证「混淆这一刀没有改变行为与协议形态」：
@@ -332,7 +432,7 @@ def run_obf_checks(obf: Path, root: Path, fixed_name: str, full_version: str,
         g8_obf_risk(text),
         g7_obf_measure(obf, root, obf.name),
         g3_probe(obf, root),
-        g4_smoke(obf, smoke_test, root),
+        g4_smoke(obf, smoke_test, root, smoke_data, allow_obf_static=True),
         g5_collect_gate(obf, text, obf.name),
         g6_versions(obf, text, full_version, fixed_name),
     ]
