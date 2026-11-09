@@ -165,9 +165,42 @@ jobs:
           git config user.name "sync-bot"
           git config user.email "sync-bot@users.noreply.github.com"
           git add manifest.json state/state.json reports/latest.json
+          # history 通常已被上一次 NO_CHANGE 段首带走；这里再 add 一次，
+          # 保证 BUILD_OK 这一行不留在工作区里丢掉（CI 每次都是全新 checkout）。
+          [ -f state/history.jsonl ] && git add state/history.jsonl || true
           git commit -m "chore: sync upstream ${UP} -> ${VERSION}"
           git push
           echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: 提交运行记录（判定变化 / 失败时留痕）
+        # state/history.jsonl 是稀疏事件时间线：连续 NO_CHANGE 的日子不加行、不产生 diff，
+        # 所以这个 step 平时什么都不做。只在三种时刻真的提交：
+        #   ① 状态切换（进入 / 退出 NO_CHANGE）② 任何失败 ③ BUILD_OK（通常已被上一步带走）
+        # 别用 `set -e` 裸判 git diff：有差异时它返回 1，会让 step 直接判失败
+        # （手册 P-1339 的 set -e 空提交陷阱，这里必须包进 if）。
+        if: ${{ !cancelled() && inputs.dry_run != true }}
+        run: |
+          set -e
+          if [ ! -f state/history.jsonl ]; then
+            echo "无 state/history.jsonl，跳过"
+            exit 0
+          fi
+          # 必须用 status --porcelain，不能用 git diff：history.jsonl 第一次出现时是
+          # **未跟踪文件**，git diff 对它返回 0（看起来"没变化"），会导致首条记录永远提交不上。
+          if [ -z "$(git status --porcelain -- state/history.jsonl)" ]; then
+            echo "history 无变化（NO_CHANGE 段内），不提交"
+            exit 0
+          fi
+          STATUS=$(python -c "import json;print(json.load(open('reports/latest.json',encoding='utf-8')).get('status','unknown'))" 2>/dev/null || echo unknown)
+          BLOB=$(python -c "import json;print((json.load(open('reports/latest.json',encoding='utf-8')).get('upstream') or {}).get('blob_sha','')[:8])" 2>/dev/null || echo unknown)
+          git config user.name "sync-bot"
+          git config user.email "sync-bot@users.noreply.github.com"
+          git add state/history.jsonl
+          git commit -m "chore(run-log): ${STATUS} ${BLOB}"
+          # history 是辅助证据，推不上去不该把流水线的判定结果也带成红的
+          if ! git push; then
+            echo "::warning::history 提交推送失败，本次判定不受影响"
+          fi
 
       - name: 漂移/门禁失败时开 Issue 提醒人工处理
         if: steps.pipe.outputs.code == '2' || steps.pipe.outputs.code == '3'

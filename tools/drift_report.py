@@ -11,11 +11,185 @@
 from __future__ import annotations
 import hashlib
 import json
+import os
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any
 
 CST = timezone(timedelta(hours=8))
+
+# ---------------------------------------------------------------- 运行历史
+# 缺口：RUN-*.md 被 gitignore，只活在 artifact 里（retention 30 天），40 天后
+# 「那天为什么挂」永久无证；latest.json 是覆盖写，只有「这一刻」，看不出趋势。
+# 这里按月累积一条稀疏时间线，入库，跟 git log 同寿命。
+#
+# 为什么是「稀疏」而不是每 run 一行：
+#   每天一次 schedule，若每 run 都追加，history 每天都有 diff → 每天都得 commit，
+#   一年 365 个空提交，与 monthly heartbeat「同月跳过、不污染历史」的取向冲突。
+#   稀疏规则：进入 NO_CHANGE 的那天记一行，期间连续 NO_CHANGE 不记；
+#   BUILD_OK 与任何失败每次都记（这两类本来就伴随提交 / Issue，零额外成本）。
+HISTORY_REL = Path("state") / "history.jsonl"
+HISTORY_MAX = 200
+_KEEP_STATUSES = ("BUILD_OK", "NO_CHANGE", "ANCHOR_DRIFT", "GATE_FAILED", "FETCH_FAILED")
+
+
+def _history_enabled() -> bool:
+    """默认只在 CI 里写；本地 dry-run 不写，避免每次复现都把工作区弄脏。
+
+    DOUJS_HISTORY=on  强制写（本地验证用）
+    DOUJS_HISTORY=off 强制不写
+    未设置时看 GITHUB_ACTIONS：CI 为 true。
+    """
+    v = (os.environ.get("DOUJS_HISTORY") or "").strip().lower()
+    if v in ("off", "0", "false", "no"):
+        return False
+    if v in ("on", "1", "true", "yes"):
+        return True
+    return os.environ.get("GITHUB_ACTIONS") == "true"
+
+
+def _iso_utc(run_at: str) -> str:
+    """run_at 是 CST 人类可读串，history 一律存 UTC ISO8601。
+
+    混用时区是审计口径出错的头号原因：本地 12:00 与 UTC 04:00 是同一条记录，
+    按字符串比时间会差 8 小时（这个坑在 lxserver 8h 报告里踩过，见手册 P-1348）。
+    """
+    try:
+        dt = datetime.strptime(run_at, "%Y-%m-%d %H:%M:%S %z")
+    except Exception:
+        dt = datetime.now(CST)
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _cst_short(iso: str) -> str:
+    try:
+        dt = datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ").replace(
+            tzinfo=timezone.utc).astimezone(CST)
+        return dt.strftime("%Y-%m-%d %H:%M")
+    except Exception:
+        return iso or "n/a"
+
+
+def _age_days(iso: str) -> int | None:
+    try:
+        dt = datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    except Exception:
+        return None
+    return max(0, (datetime.now(timezone.utc) - dt).days)
+
+
+def _history_record(data: dict[str, Any]) -> dict[str, Any]:
+    """一行 = 一次判定的摘要。几十字节。
+
+    脱敏红线：本文件会入库且仓库是 public，**只放** blob 短 sha / 版本号 /
+    产物 sha256 短值 / 状态与退出码。绝不出现上游 owner/repo/raw URL ——
+    这些只从仓库 Variables 注入，写进来等于把上游来源公开进代码搜索。
+    """
+    up = data.get("upstream") or {}
+    gates = list(data.get("gates") or [])
+    obf = list(data.get("obf_gates") or [])
+    allg = gates + obf
+    return {
+        "at": _iso_utc(data.get("run_at", "")),
+        "status": data.get("status", ""),
+        "code": data.get("exit_code", 0),
+        "blob": (up.get("blob_sha") or "")[:12],
+        "up_ver": up.get("version") or "",
+        "ver": data.get("full_version") or "",
+        "prod": (data.get("product_sha256") or "")[:12],
+        "gates": "%d/%d" % (sum(1 for g in gates if g.get("ok")), len(gates)),
+        "obf_gates": "%d/%d" % (sum(1 for g in obf if g.get("ok")), len(obf)),
+        "fail": [str(g.get("name")) for g in allg if not g.get("ok")][:6],
+        "drifts": len(data.get("drifts") or []),
+        "run": os.environ.get("GITHUB_RUN_NUMBER", ""),
+        "dry": bool(data.get("dry_run")),
+    }
+
+
+def _should_record(prev: dict[str, Any] | None, rec: dict[str, Any]) -> bool:
+    if prev is None:
+        return True
+    if rec["status"] != prev.get("status"):
+        return True                 # 状态切换点：进入/退出 NO_CHANGE、开始失败、恢复成功
+    if rec["status"] != "NO_CHANGE":
+        return True                 # BUILD_OK / 失败：每次都记（连续失败计数要靠它）
+    return False                    # 连续 NO_CHANGE：只保留段首那一行，零 diff
+
+
+def _history_stats(records: list[dict[str, Any]]) -> dict[str, Any]:
+    # 「上次构建成功」必须排除 dry-run：dry-run 的 status 也是 BUILD_OK，
+    # 但它没有产物可下载，混进来会让人以为线上已经有新版。
+    last_ok = next((r for r in reversed(records)
+                    if r.get("status") == "BUILD_OK" and not r.get("dry")), None)
+    last_ok_at = (last_ok or {}).get("at", "")
+    fails = 0
+    for r in reversed(records):
+        if r.get("status") in ("BUILD_OK", "NO_CHANGE"):
+            break
+        fails += 1
+    nc_since = ""
+    for r in reversed(records):
+        if r.get("status") == "NO_CHANGE":
+            nc_since = r.get("at", "")
+        else:
+            break
+    return {
+        "n": len(records),
+        "last_at": (records[-1].get("at", "") if records else ""),
+        "last_status": (records[-1].get("status", "") if records else ""),
+        "last_ok_at": last_ok_at,
+        "last_ok_age_days": _age_days(last_ok_at) if last_ok_at else None,
+        "consecutive_failures": fails,
+        "no_change_since": nc_since,
+        "no_change_days": _age_days(nc_since) if nc_since else None,
+    }
+
+
+def _read_history(path: Path) -> list[dict[str, Any]]:
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except OSError:
+        return []
+    out = []
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rec = json.loads(line)
+        except ValueError:
+            continue            # 坏行直接跳过，history 不能因为一行残缺让流水线挂掉
+        if isinstance(rec, dict):
+            out.append(rec)
+    return out
+
+
+def append_history(root: Path, data: dict[str, Any]) -> dict[str, Any]:
+    """把本次判定写进 state/history.jsonl（稀疏）。返回本次是否写入 + 聚合指标。"""
+    path = root / HISTORY_REL
+    records = _read_history(path)
+    stats = _history_stats(records)
+    if not _history_enabled():
+        return {"recorded": False, "reason": "disabled", **stats}
+
+    rec = _history_record(data)
+    if rec["status"] not in _KEEP_STATUSES:
+        return {"recorded": False, "reason": f"status {rec['status']} 不入账", **stats}
+
+    prev = records[-1] if records else None
+    # 同一次 run 被重复调用（脚本重跑 / write_reports 二次进入）时幂等
+    if prev and rec["run"] and prev.get("run") == rec["run"] and prev.get("status") == rec["status"]:
+        return {"recorded": False, "reason": "same run", **stats}
+    if not _should_record(prev, rec):
+        return {"recorded": False, "reason": "no_change 段内", **stats}
+
+    records.append(rec)
+    records = records[-HISTORY_MAX:]          # 只保留最近 200 条（≈ 数年事件量）
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "\n".join(json.dumps(r, ensure_ascii=False, separators=(",", ":")) for r in records) + "\n",
+        encoding="utf-8", newline="\n")
+    return {"recorded": True, "reason": "", **(_history_stats(records))}
 
 
 def now() -> str:
@@ -202,6 +376,9 @@ def write_reports(root: Path, data: dict[str, Any]) -> dict[str, str]:
     reports.mkdir(parents=True, exist_ok=True)
     out: dict[str, str] = {}
 
+    # 先记账：下面 Summary 要引用聚合指标（连续无变化天数 / 上次成功距今）
+    hist = append_history(root, data)
+
     latest = reports / "latest.json"
     latest.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8", newline="\n")
     out["latest_json"] = str(latest)
@@ -217,13 +394,27 @@ def write_reports(root: Path, data: dict[str, Any]) -> dict[str, str]:
         out["drift_md"] = str(drift_md)
 
     # GitHub Actions Job Summary（CI 里由 workflow 再 append，这里本地也生成一份）
+    # 同时是 Issue 正文：这里是「多少天没成功」唯一会被眼睛看到的地方。
     summary = reports / "ci-summary.md"
+    hb: list[str] = []
+    if hist.get("consecutive_failures"):
+        hb.append(f"⚠ 连续失败 {hist['consecutive_failures']} 次")
+    if hist.get("no_change_since"):
+        d = hist.get("no_change_days")
+        hb.append(f"连续无变化自 {_cst_short(hist['no_change_since'])}"
+                  + (f"（已 {d} 天）" if d is not None else ""))
+    if hist.get("last_ok_at"):
+        d = hist.get("last_ok_age_days")
+        hb.append(f"上次构建成功 {_cst_short(hist['last_ok_at'])}"
+                  + (f"（{d} 天前）" if d is not None else ""))
+    hb.append(f"累计 {hist.get('n', 0)} 条 · `state/history.jsonl`")
     lines = [
         f"## B2 追新 · {data['status']}",
         "",
         f"- 上游 blob sha：`{data['upstream']['blob_sha'][:12]}`",
         f"- 判据：`{data['change_verdict']}`",
         f"- 退出码：`{data['exit_code']}`",
+        "- 运行历史：" + " ｜ ".join(hb),
     ]
     if data["status"] == "BUILD_OK":
         lines += [f"- 新产物：`{data.get('full_version')}` `{data.get('product_sha256', '')[:16]}…`",

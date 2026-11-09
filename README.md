@@ -108,6 +108,21 @@ tests/drift-drill.py      漂移演练（固化，可重复跑）
 五路告警：`latest.json` + `RUN-*.md` + 漂移工单 + Actions Job Summary + 自动开/追加 Issue
 （label `anchor-drift`）。构建成功后自动关闭遗留 Issue。
 
+## 运行历史活过 30 天（`state/history.jsonl`）
+
+artifact 只保留 30 天，`RUN-*.md` 又被 gitignore —— 40 天后想回溯「那天为什么挂」就没有证据了；
+`latest.json` 是覆盖写，只有"这一刻"，看不出趋势。这条时间线补上：
+
+- **稀疏写入**：只在**判定结果发生变化**时追加一行（几十字节）。连续 `NO_CHANGE` 的日子
+  只在进入那天记一行，期间不产生 diff，**不会每天都冒出一个提交**；
+- **每次都记**：`BUILD_OK` 与任何失败（连续失败的每一次都记，用来算连续失败计数）；
+- **只保留最近 200 条**，一行紧凑 JSON，与 `git log` 同寿命；
+- Job Summary 首屏会显示「连续无变化自 X（已 N 天）｜上次构建成功 Y（N 天前）」——
+  这是区分「跑了但上游一直没变」和「根本没跑」的唯一依据；
+- **脱敏**：只含 blob 短 sha / 版本号 / 产物 sha256 短值 / 状态与退出码，
+  **不含上游 owner/repo/URL**（本仓库 public，这条是硬约束）；
+- 本地复现默认不写（`GITHUB_ACTIONS` 未设置），要本地验证用 `DOUJS_HISTORY=on`。
+
 ## 定时任务不会自己停摆（月度心跳）
 
 GitHub 有一条容易忽略的规则：**public 仓库连续 60 天没有仓库活动，`schedule` 会被自动禁用**。

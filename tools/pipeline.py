@@ -84,6 +84,9 @@ def build(args: argparse.Namespace) -> int:
 
     data: dict[str, Any] = {
         "status": "RUNNING", "run_at": now(), "exit_code": 0,
+        # dry-run 也要在 history 里 distinguishable：它的 BUILD_OK 没有产物可下载，
+        # 混进「上次构建成功」会让人以为线上有新版。
+        "dry_run": bool(args.dry_run),
         # 报告文件会入库并公开：只放 branch/path/blob，不放 owner/repo 与直达 URL，
         # 否则公开仓库等于把上游来源直接写进搜索结果里。
         "upstream": {"branch": os.environ.get("UPSTREAM_BRANCH", "master"),
