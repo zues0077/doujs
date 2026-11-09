@@ -420,9 +420,17 @@ def write_reports(root: Path, data: dict[str, Any]) -> dict[str, str]:
         lines += [f"- 新产物：`{data.get('full_version')}` `{data.get('product_sha256', '')[:16]}…`",
                   f"- 门禁：{sum(1 for g in data.get('gates', []) if g['ok'])}/{len(data.get('gates', []))} PASS"]
     elif data["status"] != "NO_CHANGE":
-        lines += ["", "### 需要人工更新锚点", ""]
-        for d in data.get("drifts", []):
-            lines.append(f"- `{d['anchor_id']}` {d['title']}：{d['reason'][:160]}")
+        # 标题必须与真实原因一致：GATE_FAILED 且 drifts 为空时，根因通常在取材/依赖，
+        # 写「需要人工更新锚点」会让人白改一圈 anchors.json（2026-11-08 G4 缺
+        # endpoint-registry 就是这么误导的，Issue 标题已分流，正文这里补上）。
+        if data.get("drifts"):
+            lines += ["", f"### 需要人工更新锚点（{len(data['drifts'])} 项）", ""]
+            for d in data.get("drifts", []):
+                lines.append(f"- `{d['anchor_id']}` {d['title']}：{d['reason'][:160]}")
+        else:
+            lines += ["", "### 门禁未通过（锚点 0 失配）", "",
+                      "先查取材/依赖（冒烟用例是否缺同仓模块）或真实断言失败，"
+                      "**不要改 `anchors.json`**。"]
         _dm = out.get('drift_md', 'reports/')
         # 只保留相对路径：绝对路径会把本机工作区目录名带进公开仓库的 CI Summary
         _dm = "reports/" + Path(str(_dm)).name if str(_dm) != 'reports/' else _dm
