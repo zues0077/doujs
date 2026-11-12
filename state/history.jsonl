@@ -1,3 +1,4 @@
 {"at":"2026-11-09T11:28:42Z","status":"NO_CHANGE","code":0,"blob":"bebd648f676a","up_ver":"","ver":"","prod":"","gates":"0/0","obf_gates":"0/0","fail":[],"drifts":0,"run":"12","dry":false}
 {"at":"2026-11-10T11:09:18Z","status":"ANCHOR_DRIFT","code":2,"blob":"a4ec7f5a9149","up_ver":"8.11.4","ver":"8.11.4-r1","prod":"","gates":"0/0","obf_gates":"0/0","fail":[],"drifts":2,"run":"13","dry":false}
 {"at":"2026-11-11T10:55:15Z","status":"ANCHOR_DRIFT","code":2,"blob":"f372c1deefab","up_ver":"8.12.1","ver":"8.12.1-r1","prod":"","gates":"0/0","obf_gates":"0/0","fail":[],"drifts":3,"run":"14","dry":false}
+{"at":"2026-11-12T11:04:30Z","status":"ANCHOR_DRIFT","code":2,"blob":"1a34a852109d","up_ver":"8.12.5","ver":"8.12.5-r1","prod":"","gates":"0/0","obf_gates":"0/0","fail":[],"drifts":3,"run":"15","dry":false}
