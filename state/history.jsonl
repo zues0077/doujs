@@ -3,3 +3,4 @@
 {"at":"2026-11-11T10:55:15Z","status":"ANCHOR_DRIFT","code":2,"blob":"f372c1deefab","up_ver":"8.12.1","ver":"8.12.1-r1","prod":"","gates":"0/0","obf_gates":"0/0","fail":[],"drifts":3,"run":"14","dry":false}
 {"at":"2026-11-12T11:04:30Z","status":"ANCHOR_DRIFT","code":2,"blob":"1a34a852109d","up_ver":"8.12.5","ver":"8.12.5-r1","prod":"","gates":"0/0","obf_gates":"0/0","fail":[],"drifts":3,"run":"15","dry":false}
 {"at":"2026-11-13T10:57:01Z","status":"ANCHOR_DRIFT","code":2,"blob":"5b6160ceb532","up_ver":"8.13.0","ver":"8.13.0-r1","prod":"","gates":"0/0","obf_gates":"0/0","fail":[],"drifts":7,"run":"16","dry":false}
+{"at":"2026-11-14T10:23:41Z","status":"ANCHOR_DRIFT","code":2,"blob":"4f2780e3a41b","up_ver":"8.13.1","ver":"8.13.1-r1","prod":"","gates":"0/0","obf_gates":"0/0","fail":[],"drifts":7,"run":"17","dry":false}
