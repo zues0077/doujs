@@ -1,6 +1,6 @@
 {
   "status": "BUILD_OK",
-  "run_at": "2026-11-16 00:37:15 +0800",
+  "run_at": "2026-11-16 01:16:56 +0800",
   "exit_code": 0,
   "dry_run": false,
   "upstream": {
@@ -11,9 +11,9 @@
     "head_sha": "2416b579b7a259c721488fce0d075ffd0aaf1975",
     "version": "8.16.0"
   },
-  "change_verdict": "上游 fd01c85628c4 → 新产物 8.16.0-r1",
-  "last_good_version": "8.15.1-r2",
-  "last_good_sha256": "3d4d548b49f3407c2b6569719e844c102918681f5a8d1ee4b2bca5f505d4cdc4",
+  "change_verdict": "上游 fd01c85628c4 → 新产物 8.16.0-r2",
+  "last_good_version": "8.16.0-r1",
+  "last_good_sha256": "b7e9e8cf582ac10a39cbdc58b768af94cc1a87cc8e73a3621e74c979d24d8942",
   "product": {
     "fixed_filename": "doujs.js"
   },
@@ -154,7 +154,7 @@
     {
       "name": "G6 版本一致",
       "ok": true,
-      "detail": "doujs @ 8.16.0-r1"
+      "detail": "doujs @ 8.16.0-r2"
     },
     {
       "name": "G9 vm2 加载验收（明文）",
@@ -181,7 +181,7 @@
     {
       "name": "G7 混淆产物体检",
       "ok": true,
-      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 524, \"bytes\": 392260, \"blockers\": []}"
+      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 515, \"bytes\": 392224, \"blockers\": []}"
     },
     {
       "name": "G3 协议探针",
@@ -202,7 +202,7 @@
     {
       "name": "G6 版本一致",
       "ok": true,
-      "detail": "doujs @ 8.16.0-r1"
+      "detail": "doujs @ 8.16.0-r2"
     },
     {
       "name": "G9 vm2 加载验收（混淆后）",
@@ -217,17 +217,17 @@
       "profile": "medium",
       "seed": 20261107,
       "input_bytes": 298575,
-      "output_bytes": 392260,
+      "output_bytes": 392224,
       "ratio": 1.37,
-      "max_line_length": 524,
+      "max_line_length": 515,
       "hex": {
         "total": 0,
         "perKb": 0
       },
       "banner_preserved": true,
-      "elapsed_ms": 955
+      "elapsed_ms": 1219
     }
   },
-  "full_version": "8.16.0-r1",
-  "product_sha256": "b7e9e8cf582ac10a39cbdc58b768af94cc1a87cc8e73a3621e74c979d24d8942"
+  "full_version": "8.16.0-r2",
+  "product_sha256": "9069e800455de89b57ddf6880045fc97482b90c1cb2177bc743f2b03b1264e97"
 }

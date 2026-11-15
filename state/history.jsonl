@@ -8,3 +8,4 @@
 {"at":"2026-11-15T10:50:43Z","status":"BUILD_OK","code":0,"blob":"145840f93acb","up_ver":"8.15.1","ver":"8.15.1-r1","prod":"988130f93335","gates":"6/6","obf_gates":"8/8","fail":[],"drifts":0,"run":"19","dry":false}
 {"at":"2026-11-15T15:33:38Z","status":"BUILD_OK","code":0,"blob":"145840f93acb","up_ver":"8.15.1","ver":"8.15.1-r2","prod":"3d4d548b49f3","gates":"7/7","obf_gates":"9/9","fail":[],"drifts":0,"run":"20","dry":false}
 {"at":"2026-11-15T16:37:15Z","status":"BUILD_OK","code":0,"blob":"fd01c85628c4","up_ver":"8.16.0","ver":"8.16.0-r1","prod":"b7e9e8cf582a","gates":"7/7","obf_gates":"9/9","fail":[],"drifts":0,"run":"21","dry":false}
+{"at":"2026-11-15T17:16:56Z","status":"BUILD_OK","code":0,"blob":"fd01c85628c4","up_ver":"8.16.0","ver":"8.16.0-r2","prod":"9069e800455d","gates":"7/7","obf_gates":"9/9","fail":[],"drifts":0,"run":"22","dry":false}
