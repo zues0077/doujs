@@ -1,19 +1,19 @@
 {
   "status": "BUILD_OK",
-  "run_at": "2026-11-15 23:33:38 +0800",
+  "run_at": "2026-11-16 00:37:15 +0800",
   "exit_code": 0,
   "dry_run": false,
   "upstream": {
     "branch": "master",
     "path": "lx-source.js",
-    "blob_sha": "145840f93acbd2221115624d237ee5ddd43195a0",
+    "blob_sha": "fd01c85628c4b481677a2dfd1ba77cfe24c5dbe4",
     "blob_note": "GitHub contents API 的 sha（即 blob sha）",
-    "head_sha": "eec051e133d8b08f3ed249de2825856f1a41f43c",
-    "version": "8.15.1"
+    "head_sha": "2416b579b7a259c721488fce0d075ffd0aaf1975",
+    "version": "8.16.0"
   },
-  "change_verdict": "上游 145840f93acb → 新产物 8.15.1-r2",
-  "last_good_version": "8.15.1-r1",
-  "last_good_sha256": "988130f93335cb20685fc59145acc4ee7b36e54a219e93bd4eb476aaafa0fcfa",
+  "change_verdict": "上游 fd01c85628c4 → 新产物 8.16.0-r1",
+  "last_good_version": "8.15.1-r2",
+  "last_good_sha256": "3d4d548b49f3407c2b6569719e844c102918681f5a8d1ee4b2bca5f505d4cdc4",
   "product": {
     "fixed_filename": "doujs.js"
   },
@@ -22,7 +22,7 @@
       "id": "P1",
       "title": "Unicode 反转义（esbuild ASCII 还原）",
       "kind": "preprocess/unescape_unicode",
-      "decoded": 2870
+      "decoded": 2968
     },
     {
       "id": "A1",
@@ -42,34 +42,34 @@
       "id": "A3",
       "title": "inited 上报 actions 收敛为 ['musicUrl']",
       "kind": "replace_block_once",
-      "before_line": 4909,
+      "before_line": 5004,
       "added_lines": -5
     },
     {
       "id": "A4",
       "title": "musicUrl 返回值解包成字符串",
       "kind": "replace_block_once",
-      "before_line": 5200,
+      "before_line": 5295,
       "added_lines": 5
     },
     {
       "id": "A5",
       "title": "关闭脚本内部 600s 自排健康探测",
       "kind": "replace_block_once",
-      "before_line": 5221,
+      "before_line": 5316,
       "added_lines": 3
     },
     {
       "id": "A6",
       "title": "加载日志单行收敛",
       "kind": "regex_replace_once",
-      "before_line": 5220
+      "before_line": 5315
     },
     {
       "id": "A7",
       "title": "vm2 兼容：runtimeToggles 从 Proxy 改为等价静态访问器视图",
       "kind": "replace_block_once",
-      "before_line": 406,
+      "before_line": 408,
       "added_lines": -2
     },
     {
@@ -154,12 +154,12 @@
     {
       "name": "G6 版本一致",
       "ok": true,
-      "detail": "doujs @ 8.15.1-r2"
+      "detail": "doujs @ 8.16.0-r1"
     },
     {
       "name": "G9 vm2 加载验收（明文）",
       "ok": true,
-      "detail": "{\"vm2\": \"3.12.2\", \"result\": \"PASS\", \"checks\": 5, \"failed\": [], \"P4\": \"声明键 12 / 视图键 12，键集一致=true，get 布尔=true，set 翻转还原=true（样本 changqingVip）\"}"
+      "detail": "{\"vm2\": \"3.12.2\", \"result\": \"PASS\", \"checks\": 5, \"failed\": [], \"P4\": \"声明键 13 / 视图键 13，键集一致=true，get 布尔=true，set 翻转还原=true（样本 changqingVip）\"}"
     }
   ],
   "obf_gates": [
@@ -181,7 +181,7 @@
     {
       "name": "G7 混淆产物体检",
       "ok": true,
-      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 523, \"bytes\": 384479, \"blockers\": []}"
+      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 524, \"bytes\": 392260, \"blockers\": []}"
     },
     {
       "name": "G3 协议探针",
@@ -192,7 +192,7 @@
       "name": "G4 冒烟回归",
       "ok": true,
       "kind": "ok",
-      "detail": "用例 67 组 | 跑完 是 | 断言失败 24（已知差异 0 / 混淆豁免 24 / 未知 0） | 中和 3 个静态源码扫描用例（try/catch 包裹，共享声明保留；静态断言在混淆产物上预期失败，明文门禁已全量把关） | 混淆豁免（ENDPOINTS/SOURCE_TOGGLES 静态解析，运行时行为由其余用例覆盖）"
+      "detail": "用例 67 组 | 跑完 是 | 断言失败 26（已知差异 0 / 混淆豁免 26 / 未知 0） | 中和 3 个静态源码扫描用例（try/catch 包裹，共享声明保留；静态断言在混淆产物上预期失败，明文门禁已全量把关） | 混淆豁免（ENDPOINTS/SOURCE_TOGGLES 静态解析，运行时行为由其余用例覆盖）"
     },
     {
       "name": "G5 采集闸门",
@@ -202,7 +202,7 @@
     {
       "name": "G6 版本一致",
       "ok": true,
-      "detail": "doujs @ 8.15.1-r2"
+      "detail": "doujs @ 8.16.0-r1"
     },
     {
       "name": "G9 vm2 加载验收（混淆后）",
@@ -216,18 +216,18 @@
     "stats": {
       "profile": "medium",
       "seed": 20261107,
-      "input_bytes": 292522,
-      "output_bytes": 384479,
+      "input_bytes": 298575,
+      "output_bytes": 392260,
       "ratio": 1.37,
-      "max_line_length": 523,
+      "max_line_length": 524,
       "hex": {
         "total": 0,
         "perKb": 0
       },
       "banner_preserved": true,
-      "elapsed_ms": 823
+      "elapsed_ms": 955
     }
   },
-  "full_version": "8.15.1-r2",
-  "product_sha256": "3d4d548b49f3407c2b6569719e844c102918681f5a8d1ee4b2bca5f505d4cdc4"
+  "full_version": "8.16.0-r1",
+  "product_sha256": "b7e9e8cf582ac10a39cbdc58b768af94cc1a87cc8e73a3621e74c979d24d8942"
 }
