@@ -7,22 +7,24 @@
     "version": "8.15.1",
     "head_sha": "eec051e133d8b08f3ed249de2825856f1a41f43c"
   },
-  "patch_rev": 1,
-  "full_version": "8.15.1-r1",
+  "patch_rev": 2,
+  "full_version": "8.15.1-r2",
   "product": {
-    "sha256": "988130f93335cb20685fc59145acc4ee7b36e54a219e93bd4eb476aaafa0fcfa",
-    "bytes": 385630,
+    "sha256": "3d4d548b49f3407c2b6569719e844c102918681f5a8d1ee4b2bca5f505d4cdc4",
+    "bytes": 384479,
     "obfuscated": true,
-    "plain_sha256": "0d7087a3727b56ddf4c3ddf6cdf9b949b898b0a158ce1456307092d4c7f32caf",
-    "plain_bytes": 292127
+    "plain_sha256": "a92282401456f177079fea34d3562f8156aa7ae48d3a2cf6c8dd1e14daaa8934",
+    "plain_bytes": 292522
   },
-  "built_at": "2026-11-15 18:51:47 +0800",
+  "built_at": "2026-11-15 23:34:42 +0800",
   "anchors": [
     "A1",
     "A2",
     "A3",
     "A4",
     "A5",
-    "A6"
+    "A6",
+    "A7",
+    "A8"
   ]
 }

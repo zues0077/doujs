@@ -1,6 +1,6 @@
 {
   "status": "BUILD_OK",
-  "run_at": "2026-11-15 18:50:43 +0800",
+  "run_at": "2026-11-15 23:33:38 +0800",
   "exit_code": 0,
   "dry_run": false,
   "upstream": {
@@ -11,9 +11,9 @@
     "head_sha": "eec051e133d8b08f3ed249de2825856f1a41f43c",
     "version": "8.15.1"
   },
-  "change_verdict": "上游 145840f93acb → 新产物 8.15.1-r1",
-  "last_good_version": "8.15.0-r1",
-  "last_good_sha256": "7c411d30b56d48082bb529c5fd6723b4a34536f45c41a74d16ea31957a26a8fe",
+  "change_verdict": "上游 145840f93acb → 新产物 8.15.1-r2",
+  "last_good_version": "8.15.1-r1",
+  "last_good_sha256": "988130f93335cb20685fc59145acc4ee7b36e54a219e93bd4eb476aaafa0fcfa",
   "product": {
     "fixed_filename": "doujs.js"
   },
@@ -64,6 +64,20 @@
       "title": "加载日志单行收敛",
       "kind": "regex_replace_once",
       "before_line": 5220
+    },
+    {
+      "id": "A7",
+      "title": "vm2 兼容：runtimeToggles 从 Proxy 改为等价静态访问器视图",
+      "kind": "replace_block_once",
+      "before_line": 406,
+      "added_lines": -2
+    },
+    {
+      "id": "A8",
+      "title": "头部补 @repository 同源标识",
+      "kind": "replace_block_once",
+      "before_line": 5,
+      "added_lines": 1
     }
   ],
   "drifts": [],
@@ -100,6 +114,14 @@
       "max_hits": 0,
       "severity": "warning",
       "why": "静态哨兵：常量通常写在配置里而非调用处，命中即说明有新的长周期调度。权威判据仍是离线探针的 longTimers 与 17951 相位验证。"
+    },
+    {
+      "id": "S5",
+      "title": "产物是否残留 Proxy 构造",
+      "hits": 0,
+      "max_hits": 0,
+      "severity": "blocking",
+      "why": "vm2 安全沙箱下任何 new Proxy() 都会在加载阶段抛错。A7 替换后明文里应为 0 处；混淆器不会新增构造，但静态哨兵先兜住漏替换/上游新增第二处的情况。"
     }
   ],
   "gates": [
@@ -132,7 +154,12 @@
     {
       "name": "G6 版本一致",
       "ok": true,
-      "detail": "doujs @ 8.15.1-r1"
+      "detail": "doujs @ 8.15.1-r2"
+    },
+    {
+      "name": "G9 vm2 加载验收（明文）",
+      "ok": true,
+      "detail": "{\"vm2\": \"3.12.2\", \"result\": \"PASS\", \"checks\": 5, \"failed\": [], \"P4\": \"声明键 12 / 视图键 12，键集一致=true，get 布尔=true，set 翻转还原=true（样本 changqingVip）\"}"
     }
   ],
   "obf_gates": [
@@ -154,7 +181,7 @@
     {
       "name": "G7 混淆产物体检",
       "ok": true,
-      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 520, \"bytes\": 385630, \"blockers\": []}"
+      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 523, \"bytes\": 384479, \"blockers\": []}"
     },
     {
       "name": "G3 协议探针",
@@ -165,17 +192,22 @@
       "name": "G4 冒烟回归",
       "ok": true,
       "kind": "ok",
-      "detail": "用例 67 组 | 跑完 是 | 断言失败 28（已知差异 0 / 混淆豁免 28 / 未知 0） | 中和 3 个静态源码扫描用例（try/catch 包裹，共享声明保留；静态断言在混淆产物上预期失败，明文门禁已全量把关） | 混淆豁免（ENDPOINTS/SOURCE_TOGGLES 静态解析，运行时行为由其余用例覆盖）"
+      "detail": "用例 67 组 | 跑完 是 | 断言失败 24（已知差异 0 / 混淆豁免 24 / 未知 0） | 中和 3 个静态源码扫描用例（try/catch 包裹，共享声明保留；静态断言在混淆产物上预期失败，明文门禁已全量把关） | 混淆豁免（ENDPOINTS/SOURCE_TOGGLES 静态解析，运行时行为由其余用例覆盖）"
     },
     {
       "name": "G5 采集闸门",
       "ok": true,
-      "detail": "score=9（阈值 4） risk=空（内置简化判定）"
+      "detail": "score=8（阈值 4） risk=空（内置简化判定）"
     },
     {
       "name": "G6 版本一致",
       "ok": true,
-      "detail": "doujs @ 8.15.1-r1"
+      "detail": "doujs @ 8.15.1-r2"
+    },
+    {
+      "name": "G9 vm2 加载验收（混淆后）",
+      "ok": true,
+      "detail": "{\"vm2\": \"3.12.2\", \"result\": \"PASS\", \"checks\": 5, \"failed\": [], \"P4\": \"混淆会改写变量名，语义探针仅在明文阶段裁决；混淆不改变语义\"}"
     }
   ],
   "obfuscation": {
@@ -184,18 +216,18 @@
     "stats": {
       "profile": "medium",
       "seed": 20261107,
-      "input_bytes": 292127,
-      "output_bytes": 385630,
-      "ratio": 1.38,
-      "max_line_length": 520,
+      "input_bytes": 292522,
+      "output_bytes": 384479,
+      "ratio": 1.37,
+      "max_line_length": 523,
       "hex": {
         "total": 0,
         "perKb": 0
       },
       "banner_preserved": true,
-      "elapsed_ms": 1143
+      "elapsed_ms": 823
     }
   },
-  "full_version": "8.15.1-r1",
-  "product_sha256": "988130f93335cb20685fc59145acc4ee7b36e54a219e93bd4eb476aaafa0fcfa"
+  "full_version": "8.15.1-r2",
+  "product_sha256": "3d4d548b49f3407c2b6569719e844c102918681f5a8d1ee4b2bca5f505d4cdc4"
 }

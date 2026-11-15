@@ -1,9 +1,9 @@
 {
   "schema": 2,
   "name": "doujs",
-  "version": "8.15.1-r1",
-  "patch_rev": 1,
-  "built_at": "2026-11-15 18:51:47 +0800",
+  "version": "8.15.1-r2",
+  "patch_rev": 2,
+  "built_at": "2026-11-15 23:34:42 +0800",
   "filename": "doujs.js",
   "upstream": {
     "branch": "master",
@@ -13,11 +13,11 @@
     "head_sha": "eec051e133d8b08f3ed249de2825856f1a41f43c"
   },
   "product": {
-    "sha256": "988130f93335cb20685fc59145acc4ee7b36e54a219e93bd4eb476aaafa0fcfa",
-    "bytes": 385630,
+    "sha256": "3d4d548b49f3407c2b6569719e844c102918681f5a8d1ee4b2bca5f505d4cdc4",
+    "bytes": 384479,
     "obfuscated": true,
-    "plain_sha256": "0d7087a3727b56ddf4c3ddf6cdf9b949b898b0a158ce1456307092d4c7f32caf",
-    "plain_bytes": 292127
+    "plain_sha256": "a92282401456f177079fea34d3562f8156aa7ae48d3a2cf6c8dd1e14daaa8934",
+    "plain_bytes": 292522
   },
   "obfuscation": {
     "profile": "medium",
@@ -25,16 +25,16 @@
     "stats": {
       "profile": "medium",
       "seed": 20261107,
-      "input_bytes": 292127,
-      "output_bytes": 385630,
-      "ratio": 1.38,
-      "max_line_length": 520,
+      "input_bytes": 292522,
+      "output_bytes": 384479,
+      "ratio": 1.37,
+      "max_line_length": 523,
       "hex": {
         "total": 0,
         "perKb": 0
       },
       "banner_preserved": true,
-      "elapsed_ms": 1143
+      "elapsed_ms": 823
     }
   },
   "download": {
@@ -54,7 +54,9 @@
     "A3",
     "A4",
     "A5",
-    "A6"
+    "A6",
+    "A7",
+    "A8"
   ],
   "gates": [
     {
@@ -79,6 +81,10 @@
     },
     {
       "name": "G6 版本一致",
+      "ok": true
+    },
+    {
+      "name": "G9 vm2 加载验收（明文）",
       "ok": true
     }
   ],
@@ -113,6 +119,10 @@
     },
     {
       "name": "G6 版本一致",
+      "ok": true
+    },
+    {
+      "name": "G9 vm2 加载验收（混淆后）",
       "ok": true
     }
   ]
