@@ -18,8 +18,13 @@ const file = process.argv[2]
 const expect = process.argv.includes('--expect') ? process.argv[process.argv.indexOf('--expect') + 1] : ''
 if (!file) { console.error('usage: node verify_compat.cjs <lx-source.js> [--expect server]'); process.exit(64) }
 
+// 兼容两种上游形态拿内部句柄：
+//   ≤8.12 平铺源码：顶层标识符可直接访问 → 尾部追加 __probe 暴露
+//   ≥8.13 esbuild bundle：全部包进 IIFE，顶层只剩 __lxSourceBundle 与 module.exports →
+//     追加行必然 ReferenceError（被 try/catch 吞掉），改从 module.exports 取
+//   （bundle 导出了 getUrlWithFallback/SOURCE_HANDLERS/runtimeToggles，足够探针使用）
 const script = fs.readFileSync(file, 'utf8') +
-  '\n;globalThis.__probe = { getUrlWithFallback, SOURCE_HANDLERS, runtimeToggles, sourceConfig };'
+  '\n;try { globalThis.__probe = { getUrlWithFallback, SOURCE_HANDLERS, runtimeToggles, sourceConfig }; } catch (e) { globalThis.__probe = null; }'
 
 let inited = null
 let handler = null
@@ -70,7 +75,19 @@ try {
   process.exit(1)
 }
 
-const p = sandbox.__probe
+let p = sandbox.__probe
+if (!p || !p.getUrlWithFallback) {
+  const mod = (sandbox.module && sandbox.module.exports) || null
+  if (mod && mod.getUrlWithFallback && mod.SOURCE_HANDLERS) {
+    p = mod
+    out.probeSource = 'module.exports（esbuild bundle 形态）'
+  }
+}
+if (!p || !p.getUrlWithFallback) {
+  out.loadError = out.loadError || '无法获取内部句柄：既无顶层 __probe 也无 module.exports 导出'
+  console.log(JSON.stringify(out, null, 2))
+  process.exit(1)
+}
 out.loaded = !!inited && !!handler
 out.sources = inited ? Object.fromEntries(Object.entries(inited.sources).map(([k, v]) => [k, {
   actions: v.actions, qualitys: v.qualitys, type: v.type,

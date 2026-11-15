@@ -143,50 +143,41 @@ OBF_STATIC_MARKERS = (
 )
 
 
-def _strip_static_scan_cases(js: str) -> tuple[str, int]:
-    """剔除「读产物源码文本做静态解析」的上游用例块（混淆产物复验专用）。
+def _neutralize_static_scan_cases(js: str) -> tuple[str, int]:
+    """把「读产物源码文本做静态解析」的上游用例块包进 try/catch（混淆产物复验专用）。
 
     判据按用例块内容：引用了 endpoint-registry / source-toggles 模块，或
     readFileSync 读 lx-source.js 做 SOURCE_TOGGLES 文本扫描 —— 都是静态形态断言；
-    行为类用例（fork 产物 / 走协议）不含这些特征，不会误删。
-    """
-    chunks = re.split(r"(?=console\.log\('\[T\d+[a-z]?\])", js)
-    kept: list[str] = []
-    removed = 0
-    for i, chunk in enumerate(chunks):
-        if i and ("endpoint-registry" in chunk or "parseToggles" in chunk
-                  or ("SOURCE_TOGGLES" in chunk and "readFileSync" in chunk)):
-            removed += 1
-            continue
-        kept.append(chunk)
-    return "".join(kept), removed
+    行为类用例（fork 产物 / 走协议）不含这些特征，不会误伤。
 
-
-def _strip_static_scan_cases(js: str) -> tuple[str, int]:
-    """剔除「读产物源码文本做静态解析」的上游用例块（混淆产物复验专用）。
-
-    判据按用例块内容：引用了 endpoint-registry / source-toggles 模块，或
-    readFileSync 读 lx-source.js 做 SOURCE_TOGGLES 文本扫描 —— 都是静态形态断言；
-    行为类用例（fork 产物 / 走协议）不含这些特征，不会误删。
+    为什么是 try/catch 中和而不是整块剔除（2026-11-15 教训）：上游 8.15 的静态用例块
+    （T60）尾部还带着后续 T61+ 共享的顶层声明（mp3Buf/flacBuf/okAudio）。整块删除后
+    T61 的路由闭包在运行时 ReferenceError（okAudio is not defined），表象是「混淆产物
+    行为变了」，实际是 harness 把自己依赖删了。中和方案只包住用例块本身（`  {` … `  }`），
+    块后声明原样保留，用例计数也不缩水；parseToggles 的非 assert throw 同样被接住，
+    进程能跑到「冒烟测试完成」。静态断言失败仍以 __SOFTFAIL__ 上报，
+    由 OBF_STATIC_MARKERS 豁免逻辑显式归类，不是静默放行。
 
     **不能**用 uncaughtException 软化替代：实测注入后产物内部健康探测 interval
-    永不清理，进程挂起不退出（原方案靠异常崩溃退出）。文本剔除时必须把
-    最后一个静态块后面携带的「冒烟测试完成」收尾代码切回来，否则 IIFE 尾
-    `})();` 被误删、整个文件语法崩（Unexpected end of input）。
+    永不清理，进程挂起不退出（原方案靠异常崩溃退出）。
     """
-    FINISH = "console.log('\\n冒烟测试完成"
     chunks = re.split(r"(?=console\.log\('\[T\d+[a-z]?\])", js)
-    kept: list[str] = []
-    removed = 0
+    out: list[str] = []
+    neutralized = 0
     for i, chunk in enumerate(chunks):
         if i and ("endpoint-registry" in chunk or "parseToggles" in chunk
                   or ("SOURCE_TOGGLES" in chunk and "readFileSync" in chunk)):
-            removed += 1
-            if FINISH in chunk:  # 收尾代码（冒烟完成 + exit + IIFE 尾）不在剔除范围
-                kept.append(chunk[chunk.index(FINISH):])
-            continue
-        kept.append(chunk)
-    return "".join(kept), removed
+            m = re.search(r"^  \{$", chunk, re.M)
+            m2 = re.search(r"^  \}$", chunk[m.end():], re.M) if m else None
+            if m and m2:
+                start, end = m.start(), m.end() + m2.end()
+                middle = chunk[start + 3:end - 3]  # 去掉两端的 "  {" 与 "  }"
+                caught = ("} catch (e) { console.error('__SOFTFAIL__ ' + "
+                          "JSON.stringify({ kind: 'static-scan', msg: String((e && e.message) || e) })); }\n")
+                chunk = chunk[:start] + "  try {" + middle + caught + chunk[end:]
+                neutralized += 1
+        out.append(chunk)
+    return "".join(out), neutralized
 
 
 def g4_smoke(product: Path, smoke_test: Path | None, root: Path,
@@ -209,7 +200,7 @@ def g4_smoke(product: Path, smoke_test: Path | None, root: Path,
         patched = _patch_smoke(Path(smoke_test).read_text(encoding="utf-8"))
         stripped = 0
         if allow_obf_static:
-            patched, stripped = _strip_static_scan_cases(patched)
+            patched, stripped = _neutralize_static_scan_cases(patched)
         (tmp / "test" / "smoke.cjs").write_text(patched, encoding="utf-8")
         if smoke_data and Path(smoke_data).is_dir():
             shutil.copytree(smoke_data, tmp / "scripts")
@@ -239,7 +230,7 @@ def g4_smoke(product: Path, smoke_test: Path | None, root: Path,
     parts = [f"用例 {case_count} 组", f"跑完 {'是' if completed else '否'}",
              f"断言失败 {len(soft)}（已知差异 {len(known)} / 混淆豁免 {len(obf_static)} / 未知 {len(unknown)}）"]
     if stripped:
-        parts.append(f"剔除 {stripped} 个静态源码扫描用例（混淆产物上无运行时含义，明文门禁已全量把关）")
+        parts.append(f"中和 {stripped} 个静态源码扫描用例（try/catch 包裹，共享声明保留；静态断言在混淆产物上预期失败，明文门禁已全量把关）")
     if known:
         parts.append("已知：" + "；".join(f"{a['id']}" for _, a in known))
     if obf_static:
