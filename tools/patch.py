@@ -94,6 +94,23 @@ def _drift_for(a: dict[str, Any], reason: str, src: str, needle: str) -> Drift:
     )
 
 
+def _already_satisfied(text: str, cond: dict[str, Any]) -> bool:
+    """可选锚点：判断上游是否已自行完成该修复。
+
+    只做「字面条件」判定，不做语义裁决 —— 上游若把 Proxy 粗暴换成 {}，
+    字面上同样没有 new Proxy，但 toggles 的键集/get/set 语义已丢失，
+    这一层拦不住，必须由门禁的 vm2 运行时探针（G9 明文阶段）裁决。
+    这样契约只管「要不要替换」，运行时语义只归门禁管，职责不混。
+    """
+    for pat in cond.get("must") or []:
+        if not re.search(pat, text):
+            return False
+    for pat in cond.get("must_not") or []:
+        if re.search(pat, text, re.MULTILINE):
+            return False
+    return True
+
+
 _UNI_ESC_RE = re.compile(r"((?:\\\\)*)\\u([0-9a-fA-F]{4})")
 
 
@@ -176,6 +193,17 @@ def apply_patches(
             needle = "\n".join(a["find"])
             count = text.count(needle)
             if count != 1:
+                # 可选锚点：上游自己已经把这块改好了（例如 8.16 起也移除了 Proxy），
+                # 此时「找不到待替换的旧代码」不是漂移，不该让追更链路停摆。
+                # 只在 count == 0 且字面条件明确满足时放行；count > 1 仍是异常，必须人工看。
+                optional = a.get("optional_when")
+                if count == 0 and optional and _already_satisfied(text, optional):
+                    note = optional.get("note", "上游已自行完成该修复，无需替换")
+                    r.applied.append({"id": aid, "title": a["title"],
+                                      "kind": kind + "/upstream-already-fixed",
+                                      "reason": note, "hits": 0})
+                    r.warnings.append(f"{aid} 锚点未命中（上游已自行修复，继续构建）：{note}")
+                    continue
                 d = _drift_for(a, f"精确锚点出现 {count} 次（要求恰好 1 次）——上游改动了这段代码", text, needle)
                 r.drifts.append(d)
                 if sev == "blocking":

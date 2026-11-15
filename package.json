@@ -8,6 +8,7 @@
     "measure": "node tests/measure-artifact.cjs"
   },
   "devDependencies": {
-    "javascript-obfuscator": "4.2.2"
+    "javascript-obfuscator": "4.2.2",
+    "vm2": "3.12.2"
   }
 }

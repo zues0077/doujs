@@ -141,6 +141,79 @@
       "flags": [
         "MULTILINE"
       ]
+    },
+    {
+      "id": "A7",
+      "title": "vm2 兼容：runtimeToggles 从 Proxy 改为等价静态访问器视图",
+      "kind": "replace_block_once",
+      "severity": "blocking",
+      "why": "17950 等 lxserver 容器 system.allowUnsafeVM=false → 自定义源走 vm2 安全沙箱，vm2 禁 Proxy 构造；上游 8.13 起 esbuild bundle 顶层 var runtimeToggles = new Proxy(...) 会在加载阶段直接抛 TypeError: Proxy is not a constructor，导致 status=failed / supportedSources=[] / 取链 NO_CANDIDATE。该对象在上游全文只出现 3 次（定义 + module.exports + __debug），注释明写「导出供测试/巡检断言各源默认开关状态」「断言内临时开/关源」，业务链路零调用。故按 SOURCE_TOGGLES 的 12 个固定键用 Object.defineProperty 定义 get/set 访问器，等价保留五个 trap 的全部可观察语义；简单换成 {} 会静默丢失 keys/in/set 副作用（实测 keys=0）。落点必须在明文锚点阶段：obfuscate_step 混淆后变量名 aU/aN/aT/aO 不稳定，在产物侧按变量名替换必漂。上游若改写这块但仍保留 new Proxy 构造，S5 与 post_checks 会先拦下并 ANCHOR_DRIFT；若上游自行移除了 Proxy 构造，则本锚点按 optional_when 跳过（不再假阳性停摆），toggles 的运行时语义由 G9 vm2 门禁裁决。",
+      "find": [
+        "      var runtimeToggles = new Proxy({}, {",
+        "        get(_t, id) {",
+        "          if (typeof id !== \"string\") return void 0;",
+        "          return effectiveEnabled(id);",
+        "        },",
+        "        set(_t, id, value) {",
+        "          if (typeof id !== \"string\") return false;",
+        "          userEnabled[id] = !!value;",
+        "          if (value) delete autoOff[id];",
+        "          return true;",
+        "        },",
+        "        has(_t, id) {",
+        "          return typeof id === \"string\" && id in userEnabled;",
+        "        },",
+        "        ownKeys() {",
+        "          return Object.keys(userEnabled);",
+        "        },",
+        "        getOwnPropertyDescriptor() {",
+        "          return { enumerable: true, configurable: true };",
+        "        }",
+        "      });"
+      ],
+      "replace": [
+        "      var runtimeToggles = (() => {",
+        "        // 宿主兼容版：vm2 安全沙箱禁用 Proxy 构造（8.13+ esbuild bundle 引入），改用等价静态访问器视图。",
+        "        // runtimeToggles 只导出给测试/巡检断言开关状态；取链/熔断/探测/链构造全部直接调用 effectiveEnabled()，零业务调用。",
+        "        // 五个 trap 逐一保留：get 实时生效、set 写回并解除自动熔断、has/ownKeys 登记键集、",
+        "        // getOwnPropertyDescriptor 可枚举可配置（否则 Object.keys 会漏键）。",
+        "        var view = {};",
+        "        Object.keys(SOURCE_TOGGLES).forEach(function (id) {",
+        "          Object.defineProperty(view, id, {",
+        "            enumerable: true,",
+        "            configurable: true,",
+        "            get: function () { return effectiveEnabled(id); },",
+        "            set: function (value) {",
+        "              userEnabled[id] = !!value;",
+        "              if (value) delete autoOff[id];",
+        "            }",
+        "          });",
+        "        });",
+        "        return view;",
+        "      })();"
+      ],
+      "optional_when": {
+        "must_not": [
+          "new\\s+Proxy\\s*\\("
+        ],
+        "note": "上游已自行移除 Proxy 构造（或改写为静态访问器等等价形态）时，旧锚点找不到属正常迭代，不再是漂移，追更继续。注意这里只判字面：上游若粗暴换成 {} 同样无 new Proxy，但会丢失 keys/in/set 副作用——该语义降级由 G9 明文 vm2 探针（键集 == SOURCE_TOGGLES 键集 + get/set 生效）拦截，契约层不越权做语义裁决。"
+      }
+    },
+    {
+      "id": "A8",
+      "title": "头部补 @repository 同源标识",
+      "kind": "replace_block_once",
+      "severity": "blocking",
+      "why": "lxserver userApi.ts 把 @repository/@homepage 解析进 meta.homepage 并由 /api/custom-source/list 回传 homepage；lx-hunter identity.js 的 serverRepo() 读 srv.homepage、candidateRepo() 读 e.repo，两边都有键且相等才算同源（sameNameVerdict 口径 2「同仓库同名、版本高者赢」）。只指向自家分发仓库，不写上游 owner/repo/raw URL，避免公开产物泄露上游来源。用户 2026-11-15 定的长期约定：以后每个 doujs 产物头部都要加。注意 A1 的 replace_lines 只能替换现有行、不能插行，故用独立 replace_block_once 在 A1 之后插入。",
+      "find": [
+        " * @author doujs",
+        " */"
+      ],
+      "replace": [
+        " * @author doujs",
+        " * @repository https://github.com/zues0077/doujs",
+        " */"
+      ]
     }
   ],
   "post_checks": {
@@ -149,12 +222,14 @@
       "const actions = \\[\"musicUrl\"\\];",
       "\\.then\\(\\(result\\) => \\(result && typeof result === \"object\" && !EMIT_OBJECT_RESULT",
       "if \\(globalThis\\.__lxSourceConfig && globalThis\\.__lxSourceConfig\\.enableInternalProbe === true\\) startHealthCheck\\(\\);",
-      "@version [0-9]+\\.[0-9]+\\.[0-9]+-r[0-9]+"
+      "@version [0-9]+\\.[0-9]+\\.[0-9]+-r[0-9]+",
+      "@repository https://github\\.com/zues0077/doujs"
     ],
     "must_not": [
       "^\\s*actions\\.push\\(",
       "^startHealthCheck\\(\\);",
-      "^\\s*return getUrlWithFallback\\([^\\n]*\\.catch\\(err => Promise\\.reject\\(err\\)\\);"
+      "^\\s*return getUrlWithFallback\\([^\\n]*\\.catch\\(err => Promise\\.reject\\(err\\)\\);",
+      "new\\s+Proxy\\s*\\("
     ],
     "note": "must_not 用 MULTILINE 逐行判定；动态行为（长定时器是否真的归零、musicUrl 是否真的返回字符串）由门禁的 verify_compat.cjs 实测裁决，静态哨兵只负责早发现。"
   },
@@ -190,6 +265,14 @@
       "max_hits": 0,
       "severity": "warning",
       "why": "静态哨兵：常量通常写在配置里而非调用处，命中即说明有新的长周期调度。权威判据仍是离线探针的 longTimers 与 17951 相位验证。"
+    },
+    {
+      "id": "S5",
+      "title": "产物是否残留 Proxy 构造",
+      "pattern": "new\\s+Proxy\\s*\\(",
+      "max_hits": 0,
+      "severity": "blocking",
+      "why": "vm2 安全沙箱下任何 new Proxy() 都会在加载阶段抛错。A7 替换后明文里应为 0 处；混淆器不会新增构造，但静态哨兵先兜住漏替换/上游新增第二处的情况。"
     }
   ],
   "report": {

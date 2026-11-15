@@ -7,6 +7,10 @@ G3 协议探针  tests/verify_compat.cjs --expect server（与服务端同语义
 G4 冒烟回归  上游 55 组用例，fork App 形态（emitObjectResult + enableInternalProbe）
 G5 采集闸门  采集器 scoreEntry ≥4 + 混淆风险为空（优先调用真实 checker.js）
 G6 版本一致  @version / manifest / 文件名 三者对齐
+G9 vm2 加载  与服务端同版本 vm2 原样加载产物，断言 inited/5 平台/request handler；
+             明文阶段另做 runtimeToggles 语义探针。编号跳过 G7/G8（已用于混淆产物复验）。
+
+混淆后复验：G1 G2 G8 G7 G3 G4 G5 G6 + G9(obf)。
 """
 from __future__ import annotations
 import json
@@ -395,6 +399,37 @@ def g8_obf_risk(text: str) -> dict[str, Any]:
                       + ("（high 会被猎手灌入前剔除）" if r["level"] == "high" else "")}
 
 
+def g9_vm2_load(product: Path, root: Path, mode: str = "plain") -> dict[str, Any]:
+    """vm2 实机等价加载验收（明文 / 混淆后各一道）。
+
+    门禁 G1–G6 全跑在 Node 原生 vm 下，Proxy 可用；服务端安全模式走 vm2，
+    vm2 禁 Proxy 构造。该门禁把服务端的加载条件原样搬进 CI，
+    让 BUILD_OK 真正等于「17950 一类 vm2 容器能加载并初始化」。
+    依赖 vm2 3.12.2（package.json 锁定，与服务端实测版本一致）。
+    """
+    label = f"G9 vm2 加载验收（{'明文' if mode == 'plain' else '混淆后'}）"
+    tool = root / "tests" / "vm2_compat.cjs"
+    if not tool.is_file():
+        return {"name": label, "ok": False, "detail": f"缺少 {tool}"}
+    code, out, err = _run([NODE, str(tool), str(product), "--mode", mode],
+                          cwd=root, timeout=180)
+    try:
+        j = json.loads(out.strip().splitlines()[-1])
+    except Exception:
+        return {"name": label, "ok": False,
+                "detail": (out or err).strip()[:400] or "vm2 门禁无输出（多为 vm2 未安装）"}
+    failed = [c for c in (j.get("checks") or []) if not c.get("ok")]
+    detail = {
+        "vm2": j.get("vm2Version"),
+        "result": "PASS" if j.get("ok") and code == 0 else "FAIL",
+        "checks": len(j.get("checks") or []),
+        "failed": [f"{c.get('id')} {c.get('name')}: {str(c.get('detail'))[:110]}" for c in failed],
+        "P4": next((c.get("detail") for c in (j.get("checks") or []) if c.get("id") == "P4"), ""),
+    }
+    return {"name": label, "ok": bool(j.get("ok")) and code == 0,
+            "detail": json.dumps(detail, ensure_ascii=False)}
+
+
 def run_all(product: Path, text: str, root: Path, fixed_name: str,
             full_version: str, smoke_test: Path | None,
             smoke_data: Path | None = None) -> list[dict[str, Any]]:
@@ -405,6 +440,7 @@ def run_all(product: Path, text: str, root: Path, fixed_name: str,
         g4_smoke(product, smoke_test, root, smoke_data),
         g5_collect_gate(product, text, product.name),
         g6_versions(product, text, full_version, fixed_name),
+        g9_vm2_load(product, root, "plain"),
     ]
     return gates
 
@@ -426,4 +462,5 @@ def run_obf_checks(obf: Path, root: Path, fixed_name: str, full_version: str,
         g4_smoke(obf, smoke_test, root, smoke_data, allow_obf_static=True),
         g5_collect_gate(obf, text, obf.name),
         g6_versions(obf, text, full_version, fixed_name),
+        g9_vm2_load(obf, root, "obf"),
     ]
