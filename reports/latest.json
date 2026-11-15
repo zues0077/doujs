@@ -1,19 +1,19 @@
 {
   "status": "BUILD_OK",
-  "run_at": "2026-11-15 17:06:20 +0800",
+  "run_at": "2026-11-15 18:50:43 +0800",
   "exit_code": 0,
   "dry_run": false,
   "upstream": {
     "branch": "master",
     "path": "lx-source.js",
-    "blob_sha": "d94ee116c118d414e449bcb3302fa78f0ae9a32a",
+    "blob_sha": "145840f93acbd2221115624d237ee5ddd43195a0",
     "blob_note": "GitHub contents API 的 sha（即 blob sha）",
-    "head_sha": "eb2ce1c1164f7e0ccf0863bbc713c0925ee728a7",
-    "version": "8.15.0"
+    "head_sha": "eec051e133d8b08f3ed249de2825856f1a41f43c",
+    "version": "8.15.1"
   },
-  "change_verdict": "上游 d94ee116c118 → 新产物 8.15.0-r1",
-  "last_good_version": "8.10.12-r1",
-  "last_good_sha256": "5ad6e5143cc61a30c45e386ebdaa9aeae6f39defbd48e0220ee9bfbe2c66bf98",
+  "change_verdict": "上游 145840f93acb → 新产物 8.15.1-r1",
+  "last_good_version": "8.15.0-r1",
+  "last_good_sha256": "7c411d30b56d48082bb529c5fd6723b4a34536f45c41a74d16ea31957a26a8fe",
   "product": {
     "fixed_filename": "doujs.js"
   },
@@ -42,28 +42,28 @@
       "id": "A3",
       "title": "inited 上报 actions 收敛为 ['musicUrl']",
       "kind": "replace_block_once",
-      "before_line": 4916,
+      "before_line": 4909,
       "added_lines": -5
     },
     {
       "id": "A4",
       "title": "musicUrl 返回值解包成字符串",
       "kind": "replace_block_once",
-      "before_line": 5207,
+      "before_line": 5200,
       "added_lines": 5
     },
     {
       "id": "A5",
       "title": "关闭脚本内部 600s 自排健康探测",
       "kind": "replace_block_once",
-      "before_line": 5228,
+      "before_line": 5221,
       "added_lines": 3
     },
     {
       "id": "A6",
       "title": "加载日志单行收敛",
       "kind": "regex_replace_once",
-      "before_line": 5227
+      "before_line": 5220
     }
   ],
   "drifts": [],
@@ -132,7 +132,7 @@
     {
       "name": "G6 版本一致",
       "ok": true,
-      "detail": "doujs @ 8.15.0-r1"
+      "detail": "doujs @ 8.15.1-r1"
     }
   ],
   "obf_gates": [
@@ -154,7 +154,7 @@
     {
       "name": "G7 混淆产物体检",
       "ok": true,
-      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 526, \"bytes\": 385831, \"blockers\": []}"
+      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 520, \"bytes\": 385630, \"blockers\": []}"
     },
     {
       "name": "G3 协议探针",
@@ -165,17 +165,17 @@
       "name": "G4 冒烟回归",
       "ok": true,
       "kind": "ok",
-      "detail": "用例 67 组 | 跑完 是 | 断言失败 27（已知差异 0 / 混淆豁免 27 / 未知 0） | 中和 3 个静态源码扫描用例（try/catch 包裹，共享声明保留；静态断言在混淆产物上预期失败，明文门禁已全量把关） | 混淆豁免（ENDPOINTS/SOURCE_TOGGLES 静态解析，运行时行为由其余用例覆盖）"
+      "detail": "用例 67 组 | 跑完 是 | 断言失败 28（已知差异 0 / 混淆豁免 28 / 未知 0） | 中和 3 个静态源码扫描用例（try/catch 包裹，共享声明保留；静态断言在混淆产物上预期失败，明文门禁已全量把关） | 混淆豁免（ENDPOINTS/SOURCE_TOGGLES 静态解析，运行时行为由其余用例覆盖）"
     },
     {
       "name": "G5 采集闸门",
       "ok": true,
-      "detail": "score=8（阈值 4） risk=空（内置简化判定）"
+      "detail": "score=9（阈值 4） risk=空（内置简化判定）"
     },
     {
       "name": "G6 版本一致",
       "ok": true,
-      "detail": "doujs @ 8.15.0-r1"
+      "detail": "doujs @ 8.15.1-r1"
     }
   ],
   "obfuscation": {
@@ -184,18 +184,18 @@
     "stats": {
       "profile": "medium",
       "seed": 20261107,
-      "input_bytes": 292470,
-      "output_bytes": 385831,
+      "input_bytes": 292127,
+      "output_bytes": 385630,
       "ratio": 1.38,
-      "max_line_length": 526,
+      "max_line_length": 520,
       "hex": {
         "total": 0,
         "perKb": 0
       },
       "banner_preserved": true,
-      "elapsed_ms": 1424
+      "elapsed_ms": 1143
     }
   },
-  "full_version": "8.15.0-r1",
-  "product_sha256": "7c411d30b56d48082bb529c5fd6723b4a34536f45c41a74d16ea31957a26a8fe"
+  "full_version": "8.15.1-r1",
+  "product_sha256": "988130f93335cb20685fc59145acc4ee7b36e54a219e93bd4eb476aaafa0fcfa"
 }

@@ -1,23 +1,23 @@
 {
   "schema": 2,
   "name": "doujs",
-  "version": "8.15.0-r1",
+  "version": "8.15.1-r1",
   "patch_rev": 1,
-  "built_at": "2026-11-15 17:07:25 +0800",
+  "built_at": "2026-11-15 18:51:47 +0800",
   "filename": "doujs.js",
   "upstream": {
     "branch": "master",
     "path": "lx-source.js",
-    "blob_sha": "d94ee116c118d414e449bcb3302fa78f0ae9a32a",
-    "version": "8.15.0",
-    "head_sha": "eb2ce1c1164f7e0ccf0863bbc713c0925ee728a7"
+    "blob_sha": "145840f93acbd2221115624d237ee5ddd43195a0",
+    "version": "8.15.1",
+    "head_sha": "eec051e133d8b08f3ed249de2825856f1a41f43c"
   },
   "product": {
-    "sha256": "7c411d30b56d48082bb529c5fd6723b4a34536f45c41a74d16ea31957a26a8fe",
-    "bytes": 385831,
+    "sha256": "988130f93335cb20685fc59145acc4ee7b36e54a219e93bd4eb476aaafa0fcfa",
+    "bytes": 385630,
     "obfuscated": true,
-    "plain_sha256": "396d75b3a2263a8aa3b662b150a965e7bbaa4b9c6d8f7fe882fd4b391f412409",
-    "plain_bytes": 292470
+    "plain_sha256": "0d7087a3727b56ddf4c3ddf6cdf9b949b898b0a158ce1456307092d4c7f32caf",
+    "plain_bytes": 292127
   },
   "obfuscation": {
     "profile": "medium",
@@ -25,16 +25,16 @@
     "stats": {
       "profile": "medium",
       "seed": 20261107,
-      "input_bytes": 292470,
-      "output_bytes": 385831,
+      "input_bytes": 292127,
+      "output_bytes": 385630,
       "ratio": 1.38,
-      "max_line_length": 526,
+      "max_line_length": 520,
       "hex": {
         "total": 0,
         "perKb": 0
       },
       "banner_preserved": true,
-      "elapsed_ms": 1424
+      "elapsed_ms": 1143
     }
   },
   "download": {

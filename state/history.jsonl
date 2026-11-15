@@ -5,3 +5,4 @@
 {"at":"2026-11-13T10:57:01Z","status":"ANCHOR_DRIFT","code":2,"blob":"5b6160ceb532","up_ver":"8.13.0","ver":"8.13.0-r1","prod":"","gates":"0/0","obf_gates":"0/0","fail":[],"drifts":7,"run":"16","dry":false}
 {"at":"2026-11-14T10:23:41Z","status":"ANCHOR_DRIFT","code":2,"blob":"4f2780e3a41b","up_ver":"8.13.1","ver":"8.13.1-r1","prod":"","gates":"0/0","obf_gates":"0/0","fail":[],"drifts":7,"run":"17","dry":false}
 {"at":"2026-11-15T09:06:20Z","status":"BUILD_OK","code":0,"blob":"d94ee116c118","up_ver":"8.15.0","ver":"8.15.0-r1","prod":"7c411d30b56d","gates":"6/6","obf_gates":"8/8","fail":[],"drifts":0,"run":"18","dry":false}
+{"at":"2026-11-15T10:50:43Z","status":"BUILD_OK","code":0,"blob":"145840f93acb","up_ver":"8.15.1","ver":"8.15.1-r1","prod":"988130f93335","gates":"6/6","obf_gates":"8/8","fail":[],"drifts":0,"run":"19","dry":false}
