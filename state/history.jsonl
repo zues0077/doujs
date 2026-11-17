@@ -10,3 +10,4 @@
 {"at":"2026-11-15T16:37:15Z","status":"BUILD_OK","code":0,"blob":"fd01c85628c4","up_ver":"8.16.0","ver":"8.16.0-r1","prod":"b7e9e8cf582a","gates":"7/7","obf_gates":"9/9","fail":[],"drifts":0,"run":"21","dry":false}
 {"at":"2026-11-15T17:16:56Z","status":"BUILD_OK","code":0,"blob":"fd01c85628c4","up_ver":"8.16.0","ver":"8.16.0-r2","prod":"9069e800455d","gates":"7/7","obf_gates":"9/9","fail":[],"drifts":0,"run":"22","dry":false}
 {"at":"2026-11-16T11:14:07Z","status":"BUILD_OK","code":0,"blob":"199ab944b1e1","up_ver":"8.16.1","ver":"8.16.1-r1","prod":"294cbf230a52","gates":"7/7","obf_gates":"9/9","fail":[],"drifts":0,"run":"23","dry":false}
+{"at":"2026-11-17T11:50:25Z","status":"BUILD_OK","code":0,"blob":"6b3a1f8b0789","up_ver":"8.16.4","ver":"8.16.4-r1","prod":"50fa10bf2289","gates":"7/7","obf_gates":"9/9","fail":[],"drifts":0,"run":"24","dry":false}

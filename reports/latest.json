@@ -1,19 +1,19 @@
 {
   "status": "BUILD_OK",
-  "run_at": "2026-11-16 19:14:07 +0800",
+  "run_at": "2026-11-17 19:50:25 +0800",
   "exit_code": 0,
   "dry_run": false,
   "upstream": {
     "branch": "master",
     "path": "lx-source.js",
-    "blob_sha": "199ab944b1e1510c877cf8a98195237a7323aae3",
+    "blob_sha": "6b3a1f8b078934e363a78a41557a2675c8f3fe2e",
     "blob_note": "GitHub contents API 的 sha（即 blob sha）",
-    "head_sha": "c2f1ba05389046b5e751ac20cbddec1cc209eeb4",
-    "version": "8.16.1"
+    "head_sha": "efa9f6456b286c67ebf4fc247fd1c0bb7e9621b7",
+    "version": "8.16.4"
   },
-  "change_verdict": "上游 199ab944b1e1 → 新产物 8.16.1-r1",
-  "last_good_version": "8.16.0-r2",
-  "last_good_sha256": "9069e800455de89b57ddf6880045fc97482b90c1cb2177bc743f2b03b1264e97",
+  "change_verdict": "上游 6b3a1f8b0789 → 新产物 8.16.4-r1",
+  "last_good_version": "8.16.1-r1",
+  "last_good_sha256": "294cbf230a52796b15a523f13db93f051bf4a61867dc3b7f448e4d9e56262869",
   "product": {
     "fixed_filename": "doujs.js"
   },
@@ -22,7 +22,7 @@
       "id": "P1",
       "title": "Unicode 反转义（esbuild ASCII 还原）",
       "kind": "preprocess/unescape_unicode",
-      "decoded": 2968
+      "decoded": 3060
     },
     {
       "id": "A1",
@@ -42,34 +42,34 @@
       "id": "A3",
       "title": "inited 上报 actions 收敛为 ['musicUrl']",
       "kind": "replace_block_once",
-      "before_line": 5022,
+      "before_line": 5205,
       "added_lines": -5
     },
     {
       "id": "A4",
       "title": "musicUrl 返回值解包成字符串",
       "kind": "replace_block_once",
-      "before_line": 5313,
+      "before_line": 5500,
       "added_lines": 5
     },
     {
       "id": "A5",
       "title": "关闭脚本内部 600s 自排健康探测",
       "kind": "replace_block_once",
-      "before_line": 5334,
+      "before_line": 5521,
       "added_lines": 3
     },
     {
       "id": "A6",
       "title": "加载日志单行收敛",
       "kind": "regex_replace_once",
-      "before_line": 5333
+      "before_line": 5520
     },
     {
       "id": "A7",
       "title": "vm2 兼容：runtimeToggles 从 Proxy 改为等价静态访问器视图",
       "kind": "replace_block_once",
-      "before_line": 408,
+      "before_line": 414,
       "added_lines": -2
     },
     {
@@ -154,7 +154,7 @@
     {
       "name": "G6 版本一致",
       "ok": true,
-      "detail": "doujs @ 8.16.1-r1"
+      "detail": "doujs @ 8.16.4-r1"
     },
     {
       "name": "G9 vm2 加载验收（明文）",
@@ -181,7 +181,7 @@
     {
       "name": "G7 混淆产物体检",
       "ok": true,
-      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 522, \"bytes\": 393466, \"blockers\": []}"
+      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 533, \"bytes\": 408943, \"blockers\": []}"
     },
     {
       "name": "G3 协议探针",
@@ -192,7 +192,7 @@
       "name": "G4 冒烟回归",
       "ok": true,
       "kind": "ok",
-      "detail": "用例 67 组 | 跑完 是 | 断言失败 23（已知差异 0 / 混淆豁免 23 / 未知 0） | 中和 3 个静态源码扫描用例（try/catch 包裹，共享声明保留；静态断言在混淆产物上预期失败，明文门禁已全量把关） | 混淆豁免（ENDPOINTS/SOURCE_TOGGLES 静态解析，运行时行为由其余用例覆盖）"
+      "detail": "用例 67 组 | 跑完 是 | 断言失败 27（已知差异 0 / 混淆豁免 27 / 未知 0） | 中和 3 个静态源码扫描用例（try/catch 包裹，共享声明保留；静态断言在混淆产物上预期失败，明文门禁已全量把关） | 混淆豁免（ENDPOINTS/SOURCE_TOGGLES 静态解析，运行时行为由其余用例覆盖）"
     },
     {
       "name": "G5 采集闸门",
@@ -202,7 +202,7 @@
     {
       "name": "G6 版本一致",
       "ok": true,
-      "detail": "doujs @ 8.16.1-r1"
+      "detail": "doujs @ 8.16.4-r1"
     },
     {
       "name": "G9 vm2 加载验收（混淆后）",
@@ -216,18 +216,18 @@
     "stats": {
       "profile": "medium",
       "seed": 20261107,
-      "input_bytes": 299374,
-      "output_bytes": 393466,
+      "input_bytes": 312007,
+      "output_bytes": 408943,
       "ratio": 1.37,
-      "max_line_length": 522,
+      "max_line_length": 533,
       "hex": {
         "total": 0,
         "perKb": 0
       },
       "banner_preserved": true,
-      "elapsed_ms": 1415
+      "elapsed_ms": 1292
     }
   },
-  "full_version": "8.16.1-r1",
-  "product_sha256": "294cbf230a52796b15a523f13db93f051bf4a61867dc3b7f448e4d9e56262869"
+  "full_version": "8.16.4-r1",
+  "product_sha256": "50fa10bf2289b976d71973f8847895b496cd58ebc0e5c480c4110fb654d23ebb"
 }
