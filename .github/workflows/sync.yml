@@ -136,46 +136,10 @@ jobs:
           retention-days: 30
           if-no-files-found: ignore
 
-      - name: 发布 Release（产物唯一分发通道）
-        if: steps.pipe.outputs.status == 'BUILD_OK' && inputs.dry_run != true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CHANNEL: ${{ steps.pipe.outputs.channel || 'test' }}
-        run: |
-          set -e
-          VERSION=$(python -c "import json;print(json.load(open('manifest.json',encoding='utf-8'))['version'])")
-          FN=$(python -c "import json;print(json.load(open('manifest.json',encoding='utf-8'))['filename'])")
-          UP=$(python -c "import json;d=json.load(open('manifest.json',encoding='utf-8'));print(d['upstream']['blob_sha'][:8])")
-          SHA=$(python -c "import json;d=json.load(open('manifest.json',encoding='utf-8'));print(d['product']['sha256'])")
-          # 测试版与正式版各用各的 tag，互不覆盖：测试版不占 /releases/latest，
-          # 将来人工发正式版时也不会撞上「同名 tag 资产不一致」的阻断。
-          if [ "$CHANNEL" = "latest" ]; then
-            TAG="v${VERSION}"; FLAG="--latest"; TITLE="${VERSION}"; LABEL="正式版"
-          else
-            TAG="v${VERSION}-test"; FLAG="--prerelease"; TITLE="${VERSION} (test)"; LABEL="测试版"
-          fi
-          echo "发布 ${LABEL}: ${TAG} (${FLAG})"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            # 同名 tag 已存在时必须比对资产内容，不能一律「跳过」：
-            # 否则上游改了代码但没升 @version 时，产物会被静默丢弃，页面/清单指向旧文件。
-            EXIST=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" --jq '.assets[0].digest // ""')
-            if [ -n "$EXIST" ] && [ "$EXIST" != "sha256:${SHA}" ]; then
-              echo "::error::Release ${TAG} 已存在但资产 sha256 不一致（${EXIST} vs sha256:${SHA}）——版本号没有递增，新产物无法发布"
-              exit 1
-            fi
-            echo "Release ${TAG} 已存在且资产一致（${EXIST}），跳过"
-            exit 0
-          fi
-          if [ ! -f "dist/${FN}" ]; then echo "缺少产物 dist/${FN}"; exit 1; fi
-          gh release create "$TAG" "dist/${FN}" \
-            --title "${TITLE}" \
-            --notes "channel ${LABEL}
-
-            upstream blob ${UP}
-
-            sha256 \`${SHA}\`" \
-            $FLAG
-
+      # 顺序很关键：必须先把 manifest/state 提交并推送，再创建 Release。
+      # 反过来的话 `gh release create` 会把 tag 打在「上一轮」的 HEAD 上，
+      # 造成 tag 指向的 commit 里 manifest 是旧版本（2026-11-17 实测：
+      # v8.16.4-r1-test 指向 8.16.1-r1 的提交，最新产物提交反而没有 tag）。
       - name: 提交状态（产物不入库）
         id: commit
         if: steps.pipe.outputs.status == 'BUILD_OK' && inputs.dry_run != true
@@ -197,6 +161,52 @@ jobs:
           git commit -m "chore: sync upstream ${UP} -> ${VERSION}"
           git push
           echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: 发布 Release（产物唯一分发通道）
+        if: steps.pipe.outputs.status == 'BUILD_OK' && inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHANNEL: ${{ steps.pipe.outputs.channel || 'test' }}
+        run: |
+          set -e
+          VERSION=$(python -c "import json;print(json.load(open('manifest.json',encoding='utf-8'))['version'])")
+          FN=$(python -c "import json;print(json.load(open('manifest.json',encoding='utf-8'))['filename'])")
+          UP=$(python -c "import json;d=json.load(open('manifest.json',encoding='utf-8'));print(d['upstream']['blob_sha'][:8])")
+          SHA=$(python -c "import json;d=json.load(open('manifest.json',encoding='utf-8'));print(d['product']['sha256'])")
+          # 测试版与正式版各用各的 tag，互不覆盖：测试版不占 /releases/latest，
+          # 将来人工发正式版时也不会撞上「同名 tag 资产不一致」的阻断。
+          if [ "$CHANNEL" = "latest" ]; then
+            TAG="v${VERSION}"; FLAG="--latest"; TITLE="${VERSION}"; LABEL="正式版"
+          else
+            TAG="v${VERSION}-test"; FLAG="--prerelease"; TITLE="${VERSION} (test)"; LABEL="测试版"
+          fi
+          echo "发布 ${LABEL}: ${TAG} (${FLAG})"
+          # --target 显式钉住当前 HEAD（上一步刚推送的 sync commit）。
+          # 不写 --target 时 gh 取默认分支的远端 HEAD，在「状态无变化未提交」
+          # 的分支上仍会指向旧 commit，这里统一显式指定更可预期。
+          TARGET=$(git rev-parse HEAD)
+          echo "tag target = ${TARGET}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            # 同名 tag 已存在时必须比对资产内容，不能一律「跳过」：
+            # 否则上游改了代码但没升 @version 时，产物会被静默丢弃，页面/清单指向旧文件。
+            EXIST=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" --jq '.assets[0].digest // ""')
+            if [ -n "$EXIST" ] && [ "$EXIST" != "sha256:${SHA}" ]; then
+              echo "::error::Release ${TAG} 已存在但资产 sha256 不一致（${EXIST} vs sha256:${SHA}）——版本号没有递增，新产物无法发布"
+              exit 1
+            fi
+            echo "Release ${TAG} 已存在且资产一致（${EXIST}），跳过"
+            exit 0
+          fi
+          if [ ! -f "dist/${FN}" ]; then echo "缺少产物 dist/${FN}"; exit 1; fi
+          gh release create "$TAG" "dist/${FN}" \
+            --title "${TITLE}" \
+            --target "${TARGET}" \
+            --notes "channel ${LABEL}
+
+            upstream blob ${UP}
+
+            sha256 \`${SHA}\`" \
+            $FLAG
 
       - name: 提交运行记录（判定变化 / 失败时留痕）
         # state/history.jsonl 是稀疏事件时间线：连续 NO_CHANGE 的日子不加行、不产生 diff，
