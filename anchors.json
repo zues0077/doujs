@@ -101,7 +101,7 @@
       "title": "musicUrl 返回值解包成字符串",
       "kind": "replace_block_once",
       "severity": "blocking",
-      "why": "决定性根因。内部聚合层返回 {url,type,subSource,subSourceName} 对象（fork App 私有扩展），而官方协议与 宿主 的 validateReturnedMusicUrl / normalizeProbeUrl 都只接受字符串 URL，否则判「音源未返回有效的链接字符串」→ 巡检第 2 次失败写 disabledSources → 自动关平台。8.15.0 出口重构：原 return getUrlWithFallback(...).catch(...) 单出口变为 inflight 合并 + 跨平台兜底的 task（getUrlWithCrossPlatformFallback(...).catch(normalizeErrCode)），settleOk 仍以 __spreadProps 对象包装 resolve——解包点移到 task 链尾（含 inflight 复用路径 return prev 一并覆盖）。",
+      "why": "决定性根因。内部聚合层返回 {url,type,subSource,subSourceName} 对象（fork App 私有扩展），而官方协议与 宿主 的 validateReturnedMusicUrl / normalizeProbeUrl 都只接受字符串 URL，否则判「音源未返回有效的链接字符串」→ 巡检第 2 次失败写 disabledSources → 自动关平台。8.15.0 出口重构：原 return getUrlWithFallback(...).catch(...) 单出口变为 inflight 合并 + 跨平台兜底的 task（getUrlWithCrossPlatformFallback(...).catch(normalizeErrCode)），settleOk 仍以 __spreadProps 对象包装 resolve——解包点移到 task 链尾（含 inflight 复用路径 return prev 一并覆盖）。9.0.0 上游模块化拆包后，A2 注入的 const EMIT_OBJECT_RESULT 与本调用点分属不同模块闭包，跨模块引用不可见（G4 T4 崩 lx-source.js:6513 ReferenceError、G3 musicUrl 返回 undefined），故改为内联读全局：同一配置同一默认值，任意作用域成立，v8/v9 通吃。",
       "find": [
         "        const task = getUrlWithCrossPlatformFallback(source, info.musicInfo, quality, traceId).catch((err) => Promise.reject(normalizeErrCode(err)));"
       ],
@@ -110,7 +110,7 @@
         "          // 宿主 兼容版：内部聚合层返回 {url,type,subSource,subSourceName} 包装对象（fork App 私有扩展），",
         "          // 官方协议与 宿主 的 validateReturnedMusicUrl/normalizeProbeUrl 都只接受字符串 URL → 默认解包。",
         "          // 若宿主需要 fork App 的对象形态（子源透出），加载前注入 __lxSourceConfig.emitObjectResult=true。",
-        "          .then((result) => (result && typeof result === \"object\" && !EMIT_OBJECT_RESULT",
+        "          .then((result) => (result && typeof result === \"object\" && !(globalThis.__lxSourceConfig && globalThis.__lxSourceConfig.emitObjectResult === true)",
         "            ? result.url : result));"
       ]
     },
@@ -220,7 +220,7 @@
     "must": [
       "const EMIT_OBJECT_RESULT = !!\\(globalThis\\.__lxSourceConfig",
       "const actions = \\[\"musicUrl\"\\];",
-      "\\.then\\(\\(result\\) => \\(result && typeof result === \"object\" && !EMIT_OBJECT_RESULT",
+      "\\.then\\(\\(result\\) => \\(result && typeof result === \"object\" && !\\(globalThis\\.__lxSourceConfig",
       "if \\(globalThis\\.__lxSourceConfig && globalThis\\.__lxSourceConfig\\.enableInternalProbe === true\\) startHealthCheck\\(\\);",
       "@version [0-9]+\\.[0-9]+\\.[0-9]+-r[0-9]+",
       "@repository https://github\\.com/zues0077/doujs"
