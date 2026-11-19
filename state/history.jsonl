@@ -12,3 +12,4 @@
 {"at":"2026-11-16T11:14:07Z","status":"BUILD_OK","code":0,"blob":"199ab944b1e1","up_ver":"8.16.1","ver":"8.16.1-r1","prod":"294cbf230a52","gates":"7/7","obf_gates":"9/9","fail":[],"drifts":0,"run":"23","dry":false}
 {"at":"2026-11-17T11:50:25Z","status":"BUILD_OK","code":0,"blob":"6b3a1f8b0789","up_ver":"8.16.4","ver":"8.16.4-r1","prod":"50fa10bf2289","gates":"7/7","obf_gates":"9/9","fail":[],"drifts":0,"run":"24","dry":false}
 {"at":"2026-11-18T11:39:27Z","status":"GATE_FAILED","code":3,"blob":"424e004bec62","up_ver":"9.1.0","ver":"9.1.0-r1","prod":"3e0516f4cb45","gates":"5/7","obf_gates":"0/0","fail":["G3 协议探针","G4 冒烟回归"],"drifts":0,"run":"25","dry":false}
+{"at":"2026-11-19T05:18:22Z","status":"BUILD_OK","code":0,"blob":"61d85b2ac74e","up_ver":"9.1.1","ver":"9.1.1-r1","prod":"0b501793dc2a","gates":"7/7","obf_gates":"9/9","fail":[],"drifts":0,"run":"26","dry":false}

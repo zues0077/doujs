@@ -1,19 +1,19 @@
 {
   "status": "BUILD_OK",
-  "run_at": "2026-11-17 19:50:25 +0800",
+  "run_at": "2026-11-19 13:18:22 +0800",
   "exit_code": 0,
   "dry_run": false,
   "upstream": {
     "branch": "master",
     "path": "lx-source.js",
-    "blob_sha": "6b3a1f8b078934e363a78a41557a2675c8f3fe2e",
+    "blob_sha": "61d85b2ac74efd7d0035346bb6ca3801d18b5955",
     "blob_note": "GitHub contents API 的 sha（即 blob sha）",
-    "head_sha": "efa9f6456b286c67ebf4fc247fd1c0bb7e9621b7",
-    "version": "8.16.4"
+    "head_sha": "65faeffc7559158ca93cc3041e76a788f8e6b63f",
+    "version": "9.1.1"
   },
-  "change_verdict": "上游 6b3a1f8b0789 → 新产物 8.16.4-r1",
-  "last_good_version": "8.16.1-r1",
-  "last_good_sha256": "294cbf230a52796b15a523f13db93f051bf4a61867dc3b7f448e4d9e56262869",
+  "change_verdict": "上游 61d85b2ac74e → 新产物 9.1.1-r1",
+  "last_good_version": "8.16.4-r1",
+  "last_good_sha256": "50fa10bf2289b976d71973f8847895b496cd58ebc0e5c480c4110fb654d23ebb",
   "product": {
     "fixed_filename": "doujs.js"
   },
@@ -22,7 +22,7 @@
       "id": "P1",
       "title": "Unicode 反转义（esbuild ASCII 还原）",
       "kind": "preprocess/unescape_unicode",
-      "decoded": 3060
+      "decoded": 3197
     },
     {
       "id": "A1",
@@ -35,41 +35,41 @@
       "id": "A2",
       "title": "加载时快照宿主形态开关",
       "kind": "replace_block_once",
-      "before_line": 64,
+      "before_line": 507,
       "added_lines": 2
     },
     {
       "id": "A3",
       "title": "inited 上报 actions 收敛为 ['musicUrl']",
       "kind": "replace_block_once",
-      "before_line": 5205,
+      "before_line": 6219,
       "added_lines": -5
     },
     {
       "id": "A4",
       "title": "musicUrl 返回值解包成字符串",
       "kind": "replace_block_once",
-      "before_line": 5500,
+      "before_line": 6514,
       "added_lines": 5
     },
     {
       "id": "A5",
       "title": "关闭脚本内部 600s 自排健康探测",
       "kind": "replace_block_once",
-      "before_line": 5521,
+      "before_line": 6535,
       "added_lines": 3
     },
     {
       "id": "A6",
       "title": "加载日志单行收敛",
       "kind": "regex_replace_once",
-      "before_line": 5520
+      "before_line": 6534
     },
     {
       "id": "A7",
       "title": "vm2 兼容：runtimeToggles 从 Proxy 改为等价静态访问器视图",
       "kind": "replace_block_once",
-      "before_line": 414,
+      "before_line": 94,
       "added_lines": -2
     },
     {
@@ -102,7 +102,7 @@
     {
       "id": "S3",
       "title": "musicUrl 是否还有其它未解包出口",
-      "hits": 1,
+      "hits": 0,
       "max_hits": 1,
       "severity": "warning",
       "why": "当前版本只有 1 处取链出口。若上游新增并行出口且未走 .then 解包，猎手/服务端会重新拿到对象。动态探针会兜住，但静态先提示。"
@@ -154,7 +154,7 @@
     {
       "name": "G6 版本一致",
       "ok": true,
-      "detail": "doujs @ 8.16.4-r1"
+      "detail": "doujs @ 9.1.1-r1"
     },
     {
       "name": "G9 vm2 加载验收（明文）",
@@ -181,7 +181,7 @@
     {
       "name": "G7 混淆产物体检",
       "ok": true,
-      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 533, \"bytes\": 408943, \"blockers\": []}"
+      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 783, \"bytes\": 470172, \"blockers\": []}"
     },
     {
       "name": "G3 协议探针",
@@ -202,7 +202,7 @@
     {
       "name": "G6 版本一致",
       "ok": true,
-      "detail": "doujs @ 8.16.4-r1"
+      "detail": "doujs @ 9.1.1-r1"
     },
     {
       "name": "G9 vm2 加载验收（混淆后）",
@@ -216,18 +216,18 @@
     "stats": {
       "profile": "medium",
       "seed": 20261107,
-      "input_bytes": 312007,
-      "output_bytes": 408943,
-      "ratio": 1.37,
-      "max_line_length": 533,
+      "input_bytes": 355470,
+      "output_bytes": 470172,
+      "ratio": 1.38,
+      "max_line_length": 783,
       "hex": {
         "total": 0,
         "perKb": 0
       },
       "banner_preserved": true,
-      "elapsed_ms": 1292
+      "elapsed_ms": 1584
     }
   },
-  "full_version": "8.16.4-r1",
-  "product_sha256": "50fa10bf2289b976d71973f8847895b496cd58ebc0e5c480c4110fb654d23ebb"
+  "full_version": "9.1.1-r1",
+  "product_sha256": "0b501793dc2a269f13dd586ef90a79eb77863b1a56b0040d7498e476fa811f45"
 }
