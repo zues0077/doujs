@@ -3,20 +3,20 @@
   "upstream": {
     "branch": "master",
     "path": "lx-source.js",
-    "blob_sha": "61d85b2ac74efd7d0035346bb6ca3801d18b5955",
-    "version": "9.1.1",
-    "head_sha": "65faeffc7559158ca93cc3041e76a788f8e6b63f"
+    "blob_sha": "b9bec73dc2f1d3f045eb7885298fec261cb06aa4",
+    "version": "9.1.3",
+    "head_sha": "d2f4a58be918abd122df38171b4d608c5cb1dd97"
   },
   "patch_rev": 1,
-  "full_version": "9.1.1-r1",
+  "full_version": "9.1.3-r1",
   "product": {
-    "sha256": "0b501793dc2a269f13dd586ef90a79eb77863b1a56b0040d7498e476fa811f45",
-    "bytes": 470172,
+    "sha256": "4c7f37bd306b4c8f16535b9129e82e198a2a4fe5dc7e521f6ba88932080ed850",
+    "bytes": 470471,
     "obfuscated": true,
-    "plain_sha256": "5ad5b59caf0d4de28fb15c48dac1365bf8748d07289043ab055bb2223b6dfb26",
-    "plain_bytes": 355470
+    "plain_sha256": "a4288ad32d79a13aac705fea33cee3339c60970efa30fefc5d055b83af79acfe",
+    "plain_bytes": 356334
   },
-  "built_at": "2026-11-19 13:19:35 +0800",
+  "built_at": "2026-11-20 19:37:46 +0800",
   "anchors": [
     "A1",
     "A2",
