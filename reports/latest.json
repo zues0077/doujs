@@ -1,19 +1,19 @@
 {
   "status": "BUILD_OK",
-  "run_at": "2026-11-21 18:58:53 +0800",
+  "run_at": "2026-11-22 19:21:29 +0800",
   "exit_code": 0,
   "dry_run": false,
   "upstream": {
     "branch": "master",
     "path": "lx-source.js",
-    "blob_sha": "c373200a61ec74a6795711a827779f8760bea77c",
+    "blob_sha": "400998d1b9de645d841c778c9785a38b3e3132f8",
     "blob_note": "GitHub contents API 的 sha（即 blob sha）",
-    "head_sha": "99fe88a21aad341a344d335bfc255f92710c7b30",
-    "version": "9.1.5"
+    "head_sha": "faa5875d83fab6a171b21cd42954752ea5fbb337",
+    "version": "9.1.6"
   },
-  "change_verdict": "上游 c373200a61ec → 新产物 9.1.5-r1",
-  "last_good_version": "9.1.3-r1",
-  "last_good_sha256": "4c7f37bd306b4c8f16535b9129e82e198a2a4fe5dc7e521f6ba88932080ed850",
+  "change_verdict": "上游 400998d1b9de → 新产物 9.1.6-r1",
+  "last_good_version": "9.1.5-r1",
+  "last_good_sha256": "c131df30cf340b02c67ed7c8cf56869db05fdb021c6664961b6e3c143b3f71e8",
   "product": {
     "fixed_filename": "doujs.js"
   },
@@ -22,7 +22,7 @@
       "id": "P1",
       "title": "Unicode 反转义（esbuild ASCII 还原）",
       "kind": "preprocess/unescape_unicode",
-      "decoded": 3247
+      "decoded": 3333
     },
     {
       "id": "A1",
@@ -35,35 +35,35 @@
       "id": "A2",
       "title": "加载时快照宿主形态开关",
       "kind": "replace_block_once",
-      "before_line": 517,
+      "before_line": 520,
       "added_lines": 2
     },
     {
       "id": "A3",
       "title": "inited 上报 actions 收敛为 ['musicUrl']",
       "kind": "replace_block_once",
-      "before_line": 6239,
+      "before_line": 6485,
       "added_lines": -5
     },
     {
       "id": "A4",
       "title": "musicUrl 返回值解包成字符串",
       "kind": "replace_block_once",
-      "before_line": 6534,
+      "before_line": 6784,
       "added_lines": 5
     },
     {
       "id": "A5",
       "title": "关闭脚本内部 600s 自排健康探测",
       "kind": "replace_block_once",
-      "before_line": 6555,
+      "before_line": 6805,
       "added_lines": 3
     },
     {
       "id": "A6",
       "title": "加载日志单行收敛",
       "kind": "regex_replace_once",
-      "before_line": 6554
+      "before_line": 6804
     },
     {
       "id": "A7",
@@ -154,7 +154,7 @@
     {
       "name": "G6 版本一致",
       "ok": true,
-      "detail": "doujs @ 9.1.5-r1"
+      "detail": "doujs @ 9.1.6-r1"
     },
     {
       "name": "G9 vm2 加载验收（明文）",
@@ -181,7 +181,7 @@
     {
       "name": "G7 混淆产物体检",
       "ok": true,
-      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 865, \"bytes\": 472495, \"blockers\": []}"
+      "detail": "{\"verdict\": \"PASS\", \"risk\": \"skipped\", \"score\": null, \"server\": \"skipped\", \"maxLine\": 783, \"bytes\": 485351, \"blockers\": []}"
     },
     {
       "name": "G3 协议探针",
@@ -192,7 +192,7 @@
       "name": "G4 冒烟回归",
       "ok": true,
       "kind": "ok",
-      "detail": "用例 67 组 | 跑完 是 | 断言失败 35（已知差异 0 / 混淆豁免 35 / 未知 0） | 中和 3 个静态源码扫描用例（try/catch 包裹，共享声明保留；静态断言在混淆产物上预期失败，明文门禁已全量把关） | 混淆豁免（ENDPOINTS/SOURCE_TOGGLES 静态解析，运行时行为由其余用例覆盖）"
+      "detail": "用例 67 组 | 跑完 是 | 断言失败 26（已知差异 0 / 混淆豁免 26 / 未知 0） | 中和 3 个静态源码扫描用例（try/catch 包裹，共享声明保留；静态断言在混淆产物上预期失败，明文门禁已全量把关） | 混淆豁免（ENDPOINTS/SOURCE_TOGGLES 静态解析，运行时行为由其余用例覆盖）"
     },
     {
       "name": "G5 采集闸门",
@@ -202,7 +202,7 @@
     {
       "name": "G6 版本一致",
       "ok": true,
-      "detail": "doujs @ 9.1.5-r1"
+      "detail": "doujs @ 9.1.6-r1"
     },
     {
       "name": "G9 vm2 加载验收（混淆后）",
@@ -216,18 +216,18 @@
     "stats": {
       "profile": "medium",
       "seed": 20261107,
-      "input_bytes": 358201,
-      "output_bytes": 472495,
-      "ratio": 1.38,
-      "max_line_length": 865,
+      "input_bytes": 369848,
+      "output_bytes": 485351,
+      "ratio": 1.37,
+      "max_line_length": 783,
       "hex": {
         "total": 0,
         "perKb": 0
       },
       "banner_preserved": true,
-      "elapsed_ms": 1634
+      "elapsed_ms": 983
     }
   },
-  "full_version": "9.1.5-r1",
-  "product_sha256": "c131df30cf340b02c67ed7c8cf56869db05fdb021c6664961b6e3c143b3f71e8"
+  "full_version": "9.1.6-r1",
+  "product_sha256": "1505ceb975ed4c30ede9a706c8520088b3f4f1572cce2f8f2dfec3481f65a6ff"
 }
