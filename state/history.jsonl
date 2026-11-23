@@ -17,3 +17,4 @@
 {"at":"2026-11-20T11:36:39Z","status":"BUILD_OK","code":0,"blob":"b9bec73dc2f1","up_ver":"9.1.3","ver":"9.1.3-r1","prod":"4c7f37bd306b","gates":"7/7","obf_gates":"9/9","fail":[],"drifts":0,"run":"28","dry":false}
 {"at":"2026-11-21T10:58:53Z","status":"BUILD_OK","code":0,"blob":"c373200a61ec","up_ver":"9.1.5","ver":"9.1.5-r1","prod":"c131df30cf34","gates":"7/7","obf_gates":"9/9","fail":[],"drifts":0,"run":"29","dry":false}
 {"at":"2026-11-22T11:21:29Z","status":"BUILD_OK","code":0,"blob":"400998d1b9de","up_ver":"9.1.6","ver":"9.1.6-r1","prod":"1505ceb975ed","gates":"7/7","obf_gates":"9/9","fail":[],"drifts":0,"run":"30","dry":false}
+{"at":"2026-11-23T12:34:41Z","status":"GATE_FAILED","code":3,"blob":"41f4497674b0","up_ver":"9.3.3","ver":"9.3.3-r1","prod":"25eefe9f2fbc","gates":"6/7","obf_gates":"0/0","fail":["G9 vm2 加载验收（明文）"],"drifts":0,"run":"31","dry":false}
