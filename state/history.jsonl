@@ -22,3 +22,4 @@
 {"at":"2026-11-25T12:51:33Z","status":"GATE_FAILED","code":3,"blob":"41f4497674b0","up_ver":"9.3.3","ver":"9.3.3-r1","prod":"25eefe9f2fbc","gates":"6/7","obf_gates":"0/0","fail":["G9 vm2 加载验收（明文）"],"drifts":0,"run":"33","dry":false}
 {"at":"2026-11-26T12:29:44Z","status":"GATE_FAILED","code":3,"blob":"41f4497674b0","up_ver":"9.3.3","ver":"9.3.3-r1","prod":"25eefe9f2fbc","gates":"6/7","obf_gates":"0/0","fail":["G9 vm2 加载验收（明文）"],"drifts":0,"run":"34","dry":false}
 {"at":"2026-11-27T12:15:24Z","status":"GATE_FAILED","code":3,"blob":"41f4497674b0","up_ver":"9.3.3","ver":"9.3.3-r1","prod":"25eefe9f2fbc","gates":"6/7","obf_gates":"0/0","fail":["G9 vm2 加载验收（明文）"],"drifts":0,"run":"35","dry":false}
+{"at":"2026-11-28T11:43:05Z","status":"GATE_FAILED","code":3,"blob":"41f4497674b0","up_ver":"9.3.3","ver":"9.3.3-r1","prod":"25eefe9f2fbc","gates":"6/7","obf_gates":"0/0","fail":["G9 vm2 加载验收（明文）"],"drifts":0,"run":"36","dry":false}
